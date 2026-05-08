@@ -58,7 +58,7 @@ export default function App() {
       <aside className="sidebar">
         <Search />
         <Tray />
-        {tab === "compare" && <Compare />}
+        {tab === "compare" && <Compare metrics={metrics} />}
         {tab === "score" && <Score metrics={metrics} />}
         {tab === "prefs" && <Preferences metrics={metrics} />}
       </aside>

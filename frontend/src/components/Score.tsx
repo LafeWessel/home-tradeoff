@@ -1,44 +1,64 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "../api/client";
 import { useApp } from "../store";
 import { categoryLabel, formatScore, formatValue, scoreColor, sortedCategories } from "../format";
-import type { MetricDef, ScoreResponse } from "../types";
+import type { Location, MetricDef, ScoreResponse } from "../types";
+
+type ScoredLoc = ScoreResponse["locations"][0];
 
 export function Score({ metrics }: { metrics: MetricDef[] }) {
   const selected = useApp((s) => s.selected);
   const activePresetId = useApp((s) => s.activePresetId);
   const [data, setData] = useState<ScoreResponse | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [pendingGeoids, setPendingGeoids] = useState<Set<string>>(new Set());
   const [err, setErr] = useState<string | null>(null);
+  const fetchIdRef = useRef(0);
+  const loadedGeoidSetRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    setData(null);
     setErr(null);
-    if (selected.length === 0 || activePresetId == null) return;
-    setLoading(true);
+    if (selected.length === 0 || activePresetId == null) {
+      setData(null);
+      setPendingGeoids(new Set());
+      loadedGeoidSetRef.current = new Set();
+      return;
+    }
+    const id = ++fetchIdRef.current;
+    setPendingGeoids(
+      new Set(selected.map((l) => l.geoid).filter((g) => !loadedGeoidSetRef.current.has(g)))
+    );
     api
       .score(activePresetId, selected.map((s) => s.geoid))
-      .then(setData)
-      .catch((e) => setErr(String(e)))
-      .finally(() => setLoading(false));
+      .then((res) => {
+        if (id !== fetchIdRef.current) return;
+        loadedGeoidSetRef.current = new Set(res.locations.map((l) => l.location.geoid));
+        setData(res);
+        setPendingGeoids(new Set());
+      })
+      .catch((e) => {
+        if (id !== fetchIdRef.current) return;
+        setErr(String(e));
+        setPendingGeoids(new Set());
+      });
   }, [selected, activePresetId]);
 
   if (selected.length === 0)
     return <div className="compare empty">Select locations to score.</div>;
   if (activePresetId == null)
     return <div className="compare empty">Create or activate a preset in the Preferences tab.</div>;
-  if (loading) return <div className="compare empty">Scoring…</div>;
   if (err) return <div className="compare empty">Error: {err}</div>;
-  if (!data) return null;
 
-  // Sort by score descending; nulls last.
-  const ranked = [...data.locations].sort((a, b) => {
+  // Loaded locations, sorted by score descending
+  const dataByGeoid = new Map<string, ScoredLoc>(
+    data?.locations.map((l) => [l.location.geoid, l]) ?? []
+  );
+  const ranked: ScoredLoc[] = [...dataByGeoid.values()].sort((a, b) => {
     const av = a.overall_score ?? -Infinity;
     const bv = b.overall_score ?? -Infinity;
     return bv - av;
   });
+  const pendingLocs: Location[] = selected.filter((l) => pendingGeoids.has(l.geoid));
 
-  // Build a metric->def lookup
   const mdef: Record<string, MetricDef> = {};
   for (const m of metrics) mdef[m.key] = m;
 
@@ -47,12 +67,22 @@ export function Score({ metrics }: { metrics: MetricDef[] }) {
   const usedMetrics = metrics.filter((m) => usedKeys.has(m.key));
   const cats = sortedCategories(usedMetrics.map((m) => m.category));
 
+  // Column order for breakdown: ranked loaded + pending at end
+  const breakdownCols: Array<{ geoid: string; display_name: string; pending: boolean }> = [
+    ...ranked.map((r) => ({ geoid: r.location.geoid, display_name: r.location.display_name, pending: false })),
+    ...pendingLocs.map((l) => ({ geoid: l.geoid, display_name: l.display_name, pending: true })),
+  ];
+
   return (
     <div className="compare">
-      <div style={{ marginBottom: 12, color: "var(--text-dim)", fontSize: 12 }}>
-        Preset: <strong style={{ color: "var(--text)" }}>{data.preset.name}</strong>
-        {data.preset.description ? ` — ${data.preset.description}` : ""}
-      </div>
+      {data && (
+        <div style={{ marginBottom: 12, color: "var(--text-dim)", fontSize: 12 }}>
+          Preset: <strong style={{ color: "var(--text)" }}>{data.preset.name}</strong>
+          {data.preset.description ? ` — ${data.preset.description}` : ""}
+        </div>
+      )}
+
+      {/* Summary rank table */}
       <table>
         <thead>
           <tr>
@@ -74,44 +104,57 @@ export function Score({ metrics }: { metrics: MetricDef[] }) {
                 )}
               </td>
               <td>
-                <span
-                  className="score-aggregate"
-                  style={{ color: scoreColor(r.overall_score) }}
-                >
+                <span className="score-aggregate" style={{ color: scoreColor(r.overall_score) }}>
                   {formatScore(r.overall_score)}
                 </span>
               </td>
             </tr>
           ))}
+          {pendingLocs.map((loc) => (
+            <tr key={loc.geoid}>
+              <td style={{ color: "var(--text-dim)" }}>—</td>
+              <td>
+                <div className="metric-label" style={{ color: "var(--text-dim)" }}>
+                  {loc.display_name}
+                </div>
+              </td>
+              <td><span className="spinner" /></td>
+            </tr>
+          ))}
         </tbody>
       </table>
 
-      <div style={{ marginTop: 24 }}>
-        <h3 style={{ fontSize: 12, textTransform: "uppercase", color: "var(--text-dim)" }}>
-          Per-metric breakdown
-        </h3>
-        <table>
-          <thead>
-            <tr>
-              <th style={{ width: "40%" }}>Metric (weight)</th>
-              {ranked.map((r) => (
-                <th key={r.location.geoid}>{r.location.display_name}</th>
+      {/* Per-metric breakdown — only shown once we have at least one loaded location */}
+      {(ranked.length > 0 || pendingLocs.length > 0) && cats.length > 0 && (
+        <div style={{ marginTop: 24 }}>
+          <h3 style={{ fontSize: 12, textTransform: "uppercase", color: "var(--text-dim)" }}>
+            Per-metric breakdown
+          </h3>
+          <table>
+            <thead>
+              <tr>
+                <th style={{ width: "40%" }}>Metric (weight)</th>
+                {breakdownCols.map((c) => (
+                  <th key={c.geoid}>{c.display_name}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {cats.map((cat) => (
+                <CategoryBreakdown
+                  key={cat}
+                  category={cat}
+                  metrics={usedMetrics}
+                  ranked={ranked}
+                  dataByGeoid={dataByGeoid}
+                  breakdownCols={breakdownCols}
+                  mdef={mdef}
+                />
               ))}
-            </tr>
-          </thead>
-          <tbody>
-            {cats.map((cat) => (
-              <CategoryBreakdown
-                key={cat}
-                category={cat}
-                metrics={usedMetrics}
-                ranked={ranked}
-                mdef={mdef}
-              />
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
@@ -120,40 +163,57 @@ function CategoryBreakdown({
   category,
   metrics,
   ranked,
+  dataByGeoid,
+  breakdownCols,
   mdef,
 }: {
   category: string;
   metrics: MetricDef[];
-  ranked: ScoreResponse["locations"];
+  ranked: ScoredLoc[];
+  dataByGeoid: Map<string, ScoredLoc>;
+  breakdownCols: Array<{ geoid: string; display_name: string; pending: boolean }>;
   mdef: Record<string, MetricDef>;
 }) {
   const items = metrics.filter((m) => m.category === category);
   if (items.length === 0) return null;
+
+  const firstLoaded = ranked[0];
+
   return (
     <>
       <tr className="cat-header">
-        <td colSpan={ranked.length + 1}>{categoryLabel(category)}</td>
+        <td colSpan={breakdownCols.length + 1}>{categoryLabel(category)}</td>
       </tr>
       {items.map((m) => {
-        const anyWeight = ranked[0]?.metrics.find((x) => x.metric_key === m.key)?.weight ?? 0;
+        const anyWeight =
+          firstLoaded?.metrics.find((x) => x.metric_key === m.key)?.weight ?? 0;
         return (
           <tr key={m.key}>
             <td>
               <div className="metric-label">
-                {m.label} <span style={{ color: "var(--text-dim)" }}>(w {anyWeight.toFixed(0)})</span>
+                {m.label}{" "}
+                <span style={{ color: "var(--text-dim)" }}>(w {anyWeight.toFixed(0)})</span>
               </div>
             </td>
-            {ranked.map((r) => {
-              const sm = r.metrics.find((x) => x.metric_key === m.key);
+            {breakdownCols.map((col) => {
+              if (col.pending) {
+                return (
+                  <td key={col.geoid} className="missing">
+                    <span className="spinner" />
+                  </td>
+                );
+              }
+              const r = dataByGeoid.get(col.geoid);
+              const sm = r?.metrics.find((x) => x.metric_key === m.key);
               if (!sm || sm.score == null) {
                 return (
-                  <td key={r.location.geoid} className="missing">
+                  <td key={col.geoid} className="missing">
                     —
                   </td>
                 );
               }
               return (
-                <td key={r.location.geoid}>
+                <td key={col.geoid}>
                   <div className="score-cell" style={{ color: scoreColor(sm.score) }}>
                     {formatScore(sm.score)}
                     <span
@@ -165,9 +225,7 @@ function CategoryBreakdown({
                       }}
                     />
                   </div>
-                  <div className="metric-source">
-                    {formatValue(sm.raw_value, mdef[m.key])}
-                  </div>
+                  <div className="metric-source">{formatValue(sm.raw_value, mdef[m.key])}</div>
                 </td>
               );
             })}

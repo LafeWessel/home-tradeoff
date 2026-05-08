@@ -1,34 +1,55 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "../api/client";
 import { useApp } from "../store";
 import { categoryLabel, formatValue, sortedCategories } from "../format";
-import type { CompareResponse, MetricDef } from "../types";
+import type { CompareResponse, Location, MetricDef, MetricValue } from "../types";
 
-export function Compare() {
+type LocData = CompareResponse["locations"][0];
+
+export function Compare({ metrics }: { metrics: MetricDef[] }) {
   const selected = useApp((s) => s.selected);
   const [data, setData] = useState<CompareResponse | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [pendingGeoids, setPendingGeoids] = useState<Set<string>>(new Set());
   const [err, setErr] = useState<string | null>(null);
+  const fetchIdRef = useRef(0);
+  const loadedGeoidSetRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    setData(null);
     setErr(null);
-    if (selected.length === 0) return;
-    setLoading(true);
+    if (selected.length === 0) {
+      setData(null);
+      setPendingGeoids(new Set());
+      loadedGeoidSetRef.current = new Set();
+      return;
+    }
+    const id = ++fetchIdRef.current;
+    setPendingGeoids(
+      new Set(selected.map((l) => l.geoid).filter((g) => !loadedGeoidSetRef.current.has(g)))
+    );
     api
       .compare(selected.map((s) => s.geoid))
-      .then(setData)
-      .catch((e) => setErr(String(e)))
-      .finally(() => setLoading(false));
+      .then((res) => {
+        if (id !== fetchIdRef.current) return;
+        loadedGeoidSetRef.current = new Set(res.locations.map((l) => l.location.geoid));
+        setData(res);
+        setPendingGeoids(new Set());
+      })
+      .catch((e) => {
+        if (id !== fetchIdRef.current) return;
+        setErr(String(e));
+        setPendingGeoids(new Set());
+      });
   }, [selected]);
 
   if (selected.length === 0)
     return <div className="compare empty">Select two or more locations to compare.</div>;
-  if (loading) return <div className="compare empty">Loading…</div>;
   if (err) return <div className="compare empty">Error: {err}</div>;
-  if (!data) return null;
 
-  const cats = sortedCategories(data.metrics.map((m) => m.category));
+  const dataByGeoid = new Map<string, LocData>(
+    data?.locations.map((l) => [l.location.geoid, l]) ?? []
+  );
+  const metricList = data?.metrics.length ? data.metrics : metrics;
+  const cats = sortedCategories(metricList.map((m) => m.category));
 
   return (
     <div className="compare">
@@ -36,14 +57,21 @@ export function Compare() {
         <thead>
           <tr>
             <th style={{ width: "30%" }}>Metric</th>
-            {data.locations.map((l) => (
-              <th key={l.location.geoid}>{l.location.display_name}</th>
+            {selected.map((l) => (
+              <th key={l.geoid}>{l.display_name}</th>
             ))}
           </tr>
         </thead>
         <tbody>
           {cats.map((cat) => (
-            <CategoryRows key={cat} category={cat} data={data} />
+            <CategoryRows
+              key={cat}
+              category={cat}
+              metrics={metricList}
+              selected={selected}
+              dataByGeoid={dataByGeoid}
+              pendingGeoids={pendingGeoids}
+            />
           ))}
         </tbody>
       </table>
@@ -51,26 +79,54 @@ export function Compare() {
   );
 }
 
-function CategoryRows({ category, data }: { category: string; data: CompareResponse }) {
-  const metrics = data.metrics.filter((m) => m.category === category);
+function CategoryRows({
+  category,
+  metrics,
+  selected,
+  dataByGeoid,
+  pendingGeoids,
+}: {
+  category: string;
+  metrics: MetricDef[];
+  selected: Location[];
+  dataByGeoid: Map<string, LocData>;
+  pendingGeoids: Set<string>;
+}) {
+  const catMetrics = metrics.filter((m) => m.category === category);
   return (
     <>
       <tr className="cat-header">
-        <td colSpan={data.locations.length + 1}>{categoryLabel(category)}</td>
+        <td colSpan={selected.length + 1}>{categoryLabel(category)}</td>
       </tr>
-      {metrics.map((m) => (
-        <MetricRow key={m.key} metric={m} data={data} />
+      {catMetrics.map((m) => (
+        <MetricRow
+          key={m.key}
+          metric={m}
+          selected={selected}
+          dataByGeoid={dataByGeoid}
+          pendingGeoids={pendingGeoids}
+        />
       ))}
     </>
   );
 }
 
-function MetricRow({ metric, data }: { metric: MetricDef; data: CompareResponse }) {
-  // Compute best/worst across this row using direction.
+function MetricRow({
+  metric,
+  selected,
+  dataByGeoid,
+  pendingGeoids,
+}: {
+  metric: MetricDef;
+  selected: Location[];
+  dataByGeoid: Map<string, LocData>;
+  pendingGeoids: Set<string>;
+}) {
   const numericValues: { geoid: string; v: number }[] = [];
-  for (const l of data.locations) {
-    const v = l.metrics[metric.key]?.value;
-    if (v != null && !Number.isNaN(v)) numericValues.push({ geoid: l.location.geoid, v });
+  for (const loc of selected) {
+    if (pendingGeoids.has(loc.geoid)) continue;
+    const v = dataByGeoid.get(loc.geoid)?.metrics[metric.key]?.value;
+    if (v != null && !Number.isNaN(v)) numericValues.push({ geoid: loc.geoid, v });
   }
   let bestGid: string | null = null;
   let worstGid: string | null = null;
@@ -94,29 +150,36 @@ function MetricRow({ metric, data }: { metric: MetricDef; data: CompareResponse 
         </div>
         <div className="metric-source">{metric.source_label}</div>
       </td>
-      {data.locations.map((l) => {
-        const mv = l.metrics[metric.key];
-        const isBest = bestGid === l.location.geoid;
-        const isWorst = worstGid === l.location.geoid;
+      {selected.map((loc) => {
+        if (pendingGeoids.has(loc.geoid)) {
+          return (
+            <td key={loc.geoid} className="missing">
+              <span className="spinner" />
+            </td>
+          );
+        }
+        const mv: MetricValue | undefined = dataByGeoid.get(loc.geoid)?.metrics[metric.key];
+        const isBest = bestGid === loc.geoid;
+        const isWorst = worstGid === loc.geoid;
         const cls = isBest ? "best" : isWorst ? "worst" : "";
         if (mv?.value == null) {
           return (
-            <td key={l.location.geoid} className="missing">
+            <td key={loc.geoid} className="missing">
               —
             </td>
           );
         }
         return (
-          <td key={l.location.geoid} className={cls}>
+          <td key={loc.geoid} className={cls}>
             {formatValue(mv.value, metric)}
-            {mv.level_resolved && mv.level_resolved !== l.location.level && (
+            {mv.level_resolved && mv.level_resolved !== loc.level && (
               <span className="resolved-tag" title="Inherited from coarser level">
                 {mv.level_resolved}
               </span>
             )}
             {mv.source_year && (
               <div className="metric-source">
-                {mv.source} ’{String(mv.source_year).slice(-2)}
+                {mv.source} '{String(mv.source_year).slice(-2)}
               </div>
             )}
           </td>
