@@ -28,6 +28,16 @@ interface NonStateMarkerEntry {
   el: HTMLElement;
 }
 
+const MAP_VIEW_KEY = "home-tradeoff-map-view";
+
+function savedMapView(): { center: [number, number]; zoom: number } {
+  try {
+    const raw = localStorage.getItem(MAP_VIEW_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch { /* ignore */ }
+  return { center: [-96, 38], zoom: 3.5 };
+}
+
 function nonStateColor(loc: Location) {
   return loc.level === "place" ? "#3fb950" : "#d29922";
 }
@@ -43,14 +53,23 @@ export function MapPane() {
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
+    const { center, zoom } = savedMapView();
     const map = new maplibregl.Map({
       container: containerRef.current,
       style: STYLE,
-      center: [-96, 38],
-      zoom: 3.5,
+      center,
+      zoom,
       attributionControl: { compact: true },
     });
     mapRef.current = map;
+
+    map.on("moveend", () => {
+      const c = map.getCenter();
+      localStorage.setItem(
+        MAP_VIEW_KEY,
+        JSON.stringify({ center: [c.lng, c.lat], zoom: map.getZoom() })
+      );
+    });
 
     map.on("load", async () => {
       const stateList = await api

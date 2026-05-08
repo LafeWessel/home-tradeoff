@@ -69,6 +69,9 @@ def fetch_climate(_db: Session, locations: list[Location]) -> list[tuple[int, st
         out.append((loc.id, "climate.jan_low_f", float(d["jan_low_f"]), src, yr))
         out.append((loc.id, "climate.jul_high_f", float(d["jul_high_f"]), src, yr))
         out.append((loc.id, "climate.annual_precip_in", float(d["annual_precip_in"]), src, yr))
+        out.append((loc.id, "climate.annual_snowfall_in", float(d["annual_snowfall_in"]), src, yr))
+        out.append((loc.id, "climate.annual_sunny_days", float(d["annual_sunny_days"]), src, yr))
+        out.append((loc.id, "climate.avg_wind_speed_mph", float(d["avg_wind_speed_mph"]), src, yr))
     return out
 
 
