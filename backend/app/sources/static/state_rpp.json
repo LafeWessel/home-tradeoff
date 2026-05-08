@@ -1,0 +1,18 @@
+{
+  "_meta": {
+    "source": "BEA Regional Price Parities, all-items, by state (curated)",
+    "source_year": 2022,
+    "notes": "Index where US average = 100. Higher = more expensive. Refresh annually from BEA Table SARPP."
+  },
+  "data": {
+    "AL":  88.6, "AK": 105.1, "AZ":  99.2, "AR":  87.8, "CA": 113.7, "CO": 103.6,
+    "CT": 108.3, "DE": 100.7, "DC": 113.6, "FL": 101.6, "GA":  95.9, "HI": 113.2,
+    "ID":  94.1, "IL": 100.2, "IN":  91.0, "IA":  90.5, "KS":  90.7, "KY":  88.9,
+    "LA":  92.1, "ME":  98.0, "MD": 109.1, "MA": 109.2, "MI":  93.9, "MN":  97.6,
+    "MS":  86.6, "MO":  91.4, "MT":  94.0, "NE":  91.3, "NV": 100.4, "NH": 105.5,
+    "NJ": 110.8, "NM":  93.8, "NY": 113.6, "NC":  94.3, "ND":  92.4, "OH":  91.9,
+    "OK":  88.6, "OR": 102.2, "PA":  98.4, "RI": 100.7, "SC":  93.2, "SD":  90.4,
+    "TN":  91.6, "TX":  98.0, "UT":  98.7, "VT":  99.4, "VA": 102.7, "WA": 109.3,
+    "WV":  87.9, "WI":  93.8, "WY":  93.2
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "_meta": {
+    "source": "FEMA National Risk Index — state-level averages (curated)",
+    "source_year": 2023,
+    "notes": "0-100 composite risk score (higher = greater natural-hazard risk). State-wide averages. For county-level resolution drop a 'county_fema_nri.json' file in this directory keyed by 5-digit county FIPS."
+  },
+  "data": {
+    "AL": 35, "AK": 25, "AZ": 30, "AR": 38, "CA": 75, "CO": 26,
+    "CT": 18, "DE": 22, "DC": 28, "FL": 65, "GA": 30, "HI": 30,
+    "ID": 22, "IL": 30, "IN": 28, "IA": 27, "KS": 33, "KY": 30,
+    "LA": 60, "ME": 18, "MD": 26, "MA": 22, "MI": 22, "MN": 25,
+    "MS": 38, "MO": 35, "MT": 22, "NE": 30, "NV": 25, "NH": 18,
+    "NJ": 28, "NM": 25, "NY": 30, "NC": 32, "ND": 22, "OH": 25,
+    "OK": 42, "OR": 30, "PA": 25, "RI": 20, "SC": 35, "SD": 25,
+    "TN": 30, "TX": 55, "UT": 22, "VT": 18, "VA": 25, "WA": 33,
+    "WV": 22, "WI": 22, "WY": 22
+  }
+}
