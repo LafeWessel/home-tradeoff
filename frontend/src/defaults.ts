@@ -73,6 +73,16 @@ const DEFAULTS: Record<string, DefaultSpec> = {
   "pop.growth_5yr_pct": { ideal: 3, tolerance: 5 },
   "employment.job_growth_5yr_pct": { ideal: 5, cap: -1 },
   "politics.partisan_lean_2024": { ideal: 0, tolerance: 25 },
+
+  // Race / ethnicity (ACS B03002). Defaults loosely track US national shares;
+  // tolerances are intentionally wide so the metric doesn't dominate scoring
+  // unless the user dials it in.
+  "demo.race.white_pct": { ideal: 60, tolerance: 40 },
+  "demo.race.black_pct": { ideal: 13, tolerance: 25 },
+  "demo.race.hispanic_pct": { ideal: 19, tolerance: 25 },
+  "demo.race.asian_pct": { ideal: 6, tolerance: 15 },
+  "demo.race.native_american_pct": { ideal: 1, tolerance: 5 },
+  "demo.race.other_pct": { ideal: 10, tolerance: 15 },
 };
 
 export function defaultPreferenceFor(m: MetricDef): Preference {

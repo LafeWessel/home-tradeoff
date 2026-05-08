@@ -50,6 +50,19 @@ def _owner_occupied_pct(vals: dict[str, float | None]) -> float | None:
     return _ratio(vals.get("B25003_002E"), vals.get("B25003_001E"))
 
 
+def _race_pct(*nums: str):
+    """Build a function returning sum(num vars) / B03002_001E as a percentage."""
+
+    def fn(vals: dict[str, float | None]) -> float | None:
+        total = vals.get("B03002_001E")
+        parts = [vals.get(v) for v in nums]
+        if total is None or any(p is None for p in parts):
+            return None
+        return _ratio(sum(parts), total)  # type: ignore[arg-type]
+
+    return fn
+
+
 def _identity(var: str):
     def fn(vals: dict[str, float | None]) -> float | None:
         v = vals.get(var)
@@ -73,6 +86,23 @@ METRIC_DEFS: list[tuple[str, list[str], Any]] = [
         "edu.bachelors_or_higher_pct",
         ["B15003_001E", "B15003_022E", "B15003_023E", "B15003_024E", "B15003_025E"],
         _bachelors_or_higher_pct,
+    ),
+    # ACS B03002: Hispanic/Latino origin by race. Categories are mutually exclusive
+    # so percentages sum to ~100. Hispanic counts any-race; non-Hispanic categories
+    # are the "alone" race breakdowns.
+    ("demo.race.white_pct", ["B03002_001E", "B03002_003E"], _race_pct("B03002_003E")),
+    ("demo.race.black_pct", ["B03002_001E", "B03002_004E"], _race_pct("B03002_004E")),
+    ("demo.race.hispanic_pct", ["B03002_001E", "B03002_012E"], _race_pct("B03002_012E")),
+    ("demo.race.asian_pct", ["B03002_001E", "B03002_006E"], _race_pct("B03002_006E")),
+    (
+        "demo.race.native_american_pct",
+        ["B03002_001E", "B03002_005E"],
+        _race_pct("B03002_005E"),
+    ),
+    (
+        "demo.race.other_pct",
+        ["B03002_001E", "B03002_007E", "B03002_008E", "B03002_009E"],
+        _race_pct("B03002_007E", "B03002_008E", "B03002_009E"),
     ),
 ]
 
