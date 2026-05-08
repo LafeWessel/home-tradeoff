@@ -6,6 +6,8 @@
   },
   "airports": [
     {"code": "ATL", "name": "Hartsfield–Jackson Atlanta",        "lat": 33.6407, "lon":  -84.4277},
+    {"code": "AUS", "name": "Austin–Bergstrom",                  "lat": 30.1945, "lon":  -97.6699},
+    {"code": "BNA", "name": "Nashville International",           "lat": 36.1245, "lon":  -86.6782},
     {"code": "BOS", "name": "Boston Logan",                       "lat": 42.3656, "lon":  -71.0096},
     {"code": "BWI", "name": "Baltimore/Washington",               "lat": 39.1754, "lon":  -76.6683},
     {"code": "CLT", "name": "Charlotte Douglas",                  "lat": 35.2140, "lon":  -80.9431},

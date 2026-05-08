@@ -10,6 +10,7 @@ We compute per-100k rates and emit the most recent year.
 from __future__ import annotations
 
 import logging
+import time
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -22,12 +23,23 @@ log = logging.getLogger(__name__)
 
 CDE_URL = "https://api.usa.gov/crime/fbi/cde/estimate/state/{abbr}"
 
+# Process-local circuit breaker. The CDE public API has been intermittently
+# returning 503/404; once it fails we skip further attempts for the cooldown
+# window so we don't hammer it and flood the log with one warning per state.
+_BREAKER_COOLDOWN_S = 600.0
+_breaker_until: float = 0.0
+
 
 def fetch_for_locations(
     db: Session, locations: list[Location], year: int = 2023
 ) -> list[tuple[int, str, float | None, str, int]]:
+    global _breaker_until
+
     if not settings.fbi_api_key:
-        log.warning("FBI_API_KEY missing — skipping FBI CDE fetch")
+        log.info("FBI_API_KEY missing — skipping FBI CDE fetch")
+        return []
+
+    if time.monotonic() < _breaker_until:
         return []
 
     out: list[tuple[int, str, float | None, str, int]] = []
@@ -44,8 +56,13 @@ def fetch_for_locations(
         try:
             payload = cached_get_json(db, url, params=params)
         except Exception as e:  # noqa: BLE001
-            log.warning("FBI fetch failed for %s (non-fatal): %s", loc.state_abbr, e)
-            continue
+            _breaker_until = time.monotonic() + _BREAKER_COOLDOWN_S
+            log.info(
+                "FBI CDE unavailable (cooling off %.0fs): %s",
+                _BREAKER_COOLDOWN_S,
+                str(e).splitlines()[0][:160],
+            )
+            return out
 
         rows = _coerce_rows(payload)
         if not rows:
