@@ -202,7 +202,7 @@ CATALOG: list[MetricDef] = [
         unit="per 100k",
         direction=MetricDirection.lower_better,
         description="Annual violent-crime estimate per 100,000 population.",
-        source_label="FBI CDE",
+        source_label="FBI UCR (curated)",
         finest_level="state",
     ),
     MetricDef(
@@ -212,7 +212,7 @@ CATALOG: list[MetricDef] = [
         unit="per 100k",
         direction=MetricDirection.lower_better,
         description="Annual property-crime estimate per 100,000 population.",
-        source_label="FBI CDE",
+        source_label="FBI UCR (curated)",
         finest_level="state",
     ),
     # ───── Employment (BLS LAUS) ─────

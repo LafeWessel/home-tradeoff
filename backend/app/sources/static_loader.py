@@ -263,3 +263,14 @@ def fetch_growth(_db: Session, locations: list[Location]):
 
 def fetch_politics(_db: Session, locations: list[Location]):
     return _state_keyed_simple("state_politics.json", "politics.partisan_lean_2024", locations)
+
+
+def fetch_crime(_db: Session, locations: list[Location]):
+    return _state_keyed_multi(
+        "state_crime.json",
+        {
+            "violent_per_100k": "crime.violent_per_100k",
+            "property_per_100k": "crime.property_per_100k",
+        },
+        locations,
+    )

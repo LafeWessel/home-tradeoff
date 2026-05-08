@@ -123,17 +123,10 @@ def ensure_metric_values(
     # ---- Census ACS (state, county, place) ----
     census_locs = working  # Census handles all 3 levels
     if census_locs:
-        # Filter to those missing any Census metric
-        keys = [
-            "pop.total",
-            "pop.median_age",
-            "econ.median_household_income",
-            "housing.median_value",
-            "housing.median_rent",
-            "housing.owner_occupied_pct",
-            "tax.property.median_annual_bill",
-            "edu.bachelors_or_higher_pct",
-        ]
+        # Drive the cache check from census.METRIC_DEFS so newly-added metrics
+        # (e.g. demo.race.*) automatically trigger a refetch instead of silently
+        # being skipped because older keys are still fresh.
+        keys = [k for k, _vars, _fn in census.METRIC_DEFS]
         needs = [
             loc for loc in census_locs if _missing_or_stale_metric_keys(db, loc, keys, freshness)
         ]
@@ -155,21 +148,7 @@ def ensure_metric_values(
             tuples = bls.fetch_for_locations(db, needs)
             _upsert(db, tuples)
 
-    # ---- FBI CDE (state) ----
-    fbi_locs = [loc for loc in working if loc.level == GeoLevel.state]
-    if fbi_locs:
-        needs = [
-            loc
-            for loc in fbi_locs
-            if _missing_or_stale_metric_keys(
-                db, loc, ["crime.violent_per_100k", "crime.property_per_100k"], freshness
-            )
-        ]
-        if needs:
-            tuples = fbi.fetch_for_locations(db, needs)
-            _upsert(db, tuples)
-
-    # ---- Static sources (taxes, climate, RPP, FEMA) ----
+    # ---- Static sources (taxes, climate, RPP, FEMA, crime, ...) ----
     # Static loaders are cheap — always run, the upsert is idempotent.
     _upsert(db, static_loader.fetch_taxes(db, working))
     _upsert(db, static_loader.fetch_climate(db, working))
@@ -186,7 +165,21 @@ def ensure_metric_values(
     _upsert(db, static_loader.fetch_health(db, working))
     _upsert(db, static_loader.fetch_growth(db, working))
     _upsert(db, static_loader.fetch_politics(db, working))
+    _upsert(db, static_loader.fetch_crime(db, working))
     _upsert(db, airport.fetch_for_locations(db, working))
+
+    # ---- FBI CDE live overlay (state) ----
+    # The live FBI Crime Data Explorer endpoints under api.usa.gov/crime/fbi/cde
+    # started returning 404 in 2026-05; the static state_crime.json snapshot
+    # above is the primary source. We still attempt the live fetch as a
+    # best-effort overlay so values refresh automatically once the API comes
+    # back; the circuit breaker quietly suppresses it when the API is down.
+    # Runs LAST so a successful live fetch overwrites the static snapshot.
+    fbi_locs = [loc for loc in working if loc.level == GeoLevel.state]
+    if fbi_locs:
+        tuples = fbi.fetch_for_locations(db, fbi_locs)
+        if tuples:
+            _upsert(db, tuples)
 
 
 def _upsert(
