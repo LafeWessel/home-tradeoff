@@ -4,6 +4,8 @@ Every successful response is stored in `api_cache` keyed by a hash of the
 request. On subsequent calls within `ttl_seconds` we return the cached body
 without hitting the network. Failed responses (>=400) are *not* cached so a
 transient outage doesn't poison future runs.
+
+503/429 responses are retried once after a short pause before raising.
 """
 
 from __future__ import annotations
@@ -11,6 +13,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import time
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -23,7 +26,9 @@ from ..settings import settings
 
 log = logging.getLogger(__name__)
 
-_DEFAULT_TIMEOUT = httpx.Timeout(30.0, connect=10.0)
+_DEFAULT_TIMEOUT = httpx.Timeout(15.0, connect=8.0)
+_RETRY_ON = {503, 429}   # transient: service unavailable, rate-limited
+_RETRY_WAIT = 2.0        # seconds before the single retry attempt
 
 
 def _cache_key(method: str, url: str, params: dict | None, body: bytes | None) -> str:
@@ -66,6 +71,29 @@ def cached_post_json(
     )
 
 
+def _fetch(
+    method: str,
+    url: str,
+    params: dict[str, Any] | None,
+    body: bytes | None,
+    headers: dict[str, str],
+) -> httpx.Response:
+    """Make the HTTP request, retrying once on transient errors (503/429)."""
+    with httpx.Client(timeout=_DEFAULT_TIMEOUT) as client:
+        resp = client.request(method, url, params=params, content=body, headers=headers)
+
+    if resp.status_code in _RETRY_ON:
+        log.warning(
+            "%s %s -> %d, retrying in %.0fs",
+            method, url, resp.status_code, _RETRY_WAIT,
+        )
+        time.sleep(_RETRY_WAIT)
+        with httpx.Client(timeout=_DEFAULT_TIMEOUT) as client:
+            resp = client.request(method, url, params=params, content=body, headers=headers)
+
+    return resp
+
+
 def _cached_request(
     db: Session,
     method: str,
@@ -83,23 +111,19 @@ def _cached_request(
 
     row = db.get(ApiCache, key)
     if row is not None:
-        # Some DB drivers return naive datetimes; normalize.
         fetched_at = row.fetched_at if row.fetched_at.tzinfo else row.fetched_at.replace(tzinfo=timezone.utc)
         if fetched_at + timedelta(seconds=row.ttl_seconds) > now:
             log.debug("cache hit %s %s", method, url)
             return json.loads(row.body.decode())
-        # expired — fall through to refresh
 
     log.info("cache miss %s %s", method, url)
-    headers = dict(headers or {})
-    if content_type and "Content-Type" not in headers:
-        headers["Content-Type"] = content_type
+    hdrs = dict(headers or {})
+    if content_type and "Content-Type" not in hdrs:
+        hdrs["Content-Type"] = content_type
 
-    with httpx.Client(timeout=_DEFAULT_TIMEOUT) as client:
-        resp = client.request(method, url, params=params, content=body, headers=headers)
+    resp = _fetch(method, url, params, body, hdrs)
 
     if resp.status_code >= 400:
-        # Don't cache errors — re-raise with context.
         raise httpx.HTTPStatusError(
             f"{method} {url} -> {resp.status_code}: {resp.text[:300]}",
             request=resp.request,

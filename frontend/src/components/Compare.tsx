@@ -8,6 +8,7 @@ type LocData = CompareResponse["locations"][0];
 
 export function Compare({ metrics }: { metrics: MetricDef[] }) {
   const selected = useApp((s) => s.selected);
+  const clearLocations = useApp((s) => s.clearLocations);
   const [data, setData] = useState<CompareResponse | null>(null);
   const [pendingGeoids, setPendingGeoids] = useState<Set<string>>(new Set());
   const [err, setErr] = useState<string | null>(null);
@@ -36,10 +37,12 @@ export function Compare({ metrics }: { metrics: MetricDef[] }) {
       })
       .catch((e) => {
         if (id !== fetchIdRef.current) return;
+        // Stale persisted locations — their geoids no longer exist in the DB.
+        if (String(e).includes("404")) clearLocations();
         setErr(String(e));
         setPendingGeoids(new Set());
       });
-  }, [selected]);
+  }, [selected, clearLocations]);
 
   if (selected.length === 0)
     return <div className="compare empty">Select two or more locations to compare.</div>;

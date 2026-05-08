@@ -9,6 +9,8 @@ type ScoredLoc = ScoreResponse["locations"][0];
 export function Score({ metrics }: { metrics: MetricDef[] }) {
   const selected = useApp((s) => s.selected);
   const activePresetId = useApp((s) => s.activePresetId);
+  const setActivePresetId = useApp((s) => s.setActivePresetId);
+  const clearLocations = useApp((s) => s.clearLocations);
   const [data, setData] = useState<ScoreResponse | null>(null);
   const [pendingGeoids, setPendingGeoids] = useState<Set<string>>(new Set());
   const [err, setErr] = useState<string | null>(null);
@@ -37,10 +39,16 @@ export function Score({ metrics }: { metrics: MetricDef[] }) {
       })
       .catch((e) => {
         if (id !== fetchIdRef.current) return;
-        setErr(String(e));
+        const msg = String(e);
+        if (msg.includes("404")) {
+          // Stale persisted state — preset or locations no longer in DB.
+          if (msg.includes("preset")) setActivePresetId(null);
+          else clearLocations();
+        }
+        setErr(msg);
         setPendingGeoids(new Set());
       });
-  }, [selected, activePresetId]);
+  }, [selected, activePresetId, setActivePresetId, clearLocations]);
 
   if (selected.length === 0)
     return <div className="compare empty">Select locations to score.</div>;

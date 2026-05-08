@@ -152,7 +152,7 @@ def fetch_for_locations(
         try:
             raw = cached_get_json(db, url, params=params)
         except Exception as e:  # noqa: BLE001
-            log.error("Census fetch failed for %s/%s: %s", level, state_fips, e)
+            log.warning("Census fetch failed for %s/%s (non-fatal): %s", level, state_fips, e)
             continue
         rows = _parse_acs(raw)
 

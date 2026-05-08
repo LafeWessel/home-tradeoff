@@ -62,7 +62,7 @@ def fetch_for_locations(
         try:
             payload = cached_post_json(db, BLS_URL, json_body=body)
         except Exception as e:  # noqa: BLE001
-            log.error("BLS fetch failed: %s", e)
+            log.warning("BLS fetch failed (non-fatal): %s", e)
             continue
 
         results = (payload.get("Results") or {}).get("series") or []

@@ -44,7 +44,7 @@ def fetch_for_locations(
         try:
             payload = cached_get_json(db, url, params=params)
         except Exception as e:  # noqa: BLE001
-            log.error("FBI fetch failed for %s: %s", loc.state_abbr, e)
+            log.warning("FBI fetch failed for %s (non-fatal): %s", loc.state_abbr, e)
             continue
 
         rows = _coerce_rows(payload)
