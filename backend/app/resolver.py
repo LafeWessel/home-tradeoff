@@ -26,7 +26,7 @@ from sqlalchemy.orm import Session
 from .metrics_catalog import CATALOG, CATALOG_BY_KEY, MetricDef
 from .models.location import GeoLevel, Location
 from .models.metric_value import MetricValue
-from .sources import bls, census, fbi, static_loader
+from .sources import airport, bls, census, fbi, static_loader
 
 log = logging.getLogger(__name__)
 
@@ -131,6 +131,7 @@ def ensure_metric_values(
             "housing.median_value",
             "housing.median_rent",
             "housing.owner_occupied_pct",
+            "tax.property.median_annual_bill",
             "edu.bachelors_or_higher_pct",
         ]
         needs = [
@@ -174,6 +175,18 @@ def ensure_metric_values(
     _upsert(db, static_loader.fetch_climate(db, working))
     _upsert(db, static_loader.fetch_rpp(db, working))
     _upsert(db, static_loader.fetch_fema(db, working))
+    _upsert(db, static_loader.fetch_insurance(db, working))
+    _upsert(db, static_loader.fetch_taxes_extra(db, working))
+    _upsert(db, static_loader.fetch_housing_appreciation(db, working))
+    _upsert(db, static_loader.fetch_nri_components(db, working))
+    _upsert(db, static_loader.fetch_pm25(db, working))
+    _upsert(db, static_loader.fetch_heat_index(db, working))
+    _upsert(db, static_loader.fetch_utilities(db, working))
+    _upsert(db, static_loader.fetch_education(db, working))
+    _upsert(db, static_loader.fetch_health(db, working))
+    _upsert(db, static_loader.fetch_growth(db, working))
+    _upsert(db, static_loader.fetch_politics(db, working))
+    _upsert(db, airport.fetch_for_locations(db, working))
 
 
 def _upsert(

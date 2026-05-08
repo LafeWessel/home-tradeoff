@@ -1,0 +1,18 @@
+{
+  "_meta": {
+    "source": "Insurance Information Institute / NAIC homeowners-insurance averages (curated)",
+    "source_year": 2023,
+    "notes": "Approximate average annual homeowners insurance premium for a typical owner-occupied home, $/year. Source figures are state-level averages and vary materially with home value, deductible, and rebuild cost — use as relative-ranking signal, not a quote."
+  },
+  "data": {
+    "AL": 2530, "AK": 1116, "AZ": 1500, "AR": 2480, "CA": 1405, "CO": 2735,
+    "CT": 1480, "DE":  800, "DC": 1600, "FL": 6000, "GA": 2050, "HI": 1300,
+    "ID": 1180, "IL": 1850, "IN": 1390, "IA": 1830, "KS": 3400, "KY": 1980,
+    "LA": 4900, "ME": 1115, "MD": 1430, "MA": 1700, "MI": 1800, "MN": 2200,
+    "MS": 2640, "MO": 2050, "MT": 1750, "NE": 3700, "NV": 1080, "NH": 1080,
+    "NJ": 1170, "NM": 1900, "NY": 1500, "NC": 1410, "ND": 2050, "OH": 1180,
+    "OK": 4470, "OR": 1050, "PA": 1130, "RI": 1620, "SC": 2070, "SD": 2520,
+    "TN": 2090, "TX": 4400, "UT": 1180, "VT":  940, "VA": 1300, "WA": 1080,
+    "WV": 1320, "WI": 1100, "WY": 1370
+  }
+}

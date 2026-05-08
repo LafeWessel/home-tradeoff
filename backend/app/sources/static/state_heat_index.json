@@ -1,0 +1,18 @@
+{
+  "_meta": {
+    "source": "Approximate July afternoon heat index (curated from NOAA NCEI normals + dewpoint averages)",
+    "source_year": 2020,
+    "notes": "Heat index (°F) blending July mean afternoon temperature with humidity. Higher = more oppressive summer heat. Coastal/Southern states feel hotter than dry desert states even at similar raw temperatures."
+  },
+  "data": {
+    "AL": 95, "AK": 65, "AZ": 95, "AR": 95, "CA": 80, "CO": 82,
+    "CT": 84, "DE": 88, "DC": 91, "FL": 96, "GA": 94, "HI": 88,
+    "ID": 82, "IL": 88, "IN": 87, "IA": 86, "KS": 92, "KY": 89,
+    "LA": 97, "ME": 78, "MD": 89, "MA": 82, "MI": 81, "MN": 82,
+    "MS": 96, "MO": 90, "MT": 80, "NE": 87, "NV": 87, "NH": 78,
+    "NJ": 86, "NM": 88, "NY": 81, "NC": 90, "ND": 81, "OH": 84,
+    "OK": 95, "OR": 78, "PA": 84, "RI": 81, "SC": 94, "SD": 84,
+    "TN": 91, "TX": 97, "UT": 87, "VT": 78, "VA": 89, "WA": 76,
+    "WV": 82, "WI": 80, "WY": 80
+  }
+}

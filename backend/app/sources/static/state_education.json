@@ -1,0 +1,18 @@
+{
+  "_meta": {
+    "source": "NAEP 2022 4th-grade reading proficiency (curated)",
+    "source_year": 2022,
+    "notes": "Share of 4th-graders scoring at or above 'Proficient' on the NAEP reading assessment. National average ≈ 32%."
+  },
+  "data": {
+    "AL": 23, "AK": 25, "AZ": 28, "AR": 29, "CA": 31, "CO": 35,
+    "CT": 35, "DE": 25, "DC": 30, "FL": 39, "GA": 32, "HI": 31,
+    "ID": 31, "IL": 33, "IN": 33, "IA": 33, "KS": 32, "KY": 31,
+    "LA": 24, "ME": 30, "MD": 31, "MA": 43, "MI": 28, "MN": 32,
+    "MS": 25, "MO": 30, "MT": 35, "NE": 33, "NV": 24, "NH": 38,
+    "NJ": 38, "NM": 21, "NY": 30, "NC": 32, "ND": 31, "OH": 32,
+    "OK": 24, "OR": 28, "PA": 33, "RI": 30, "SC": 30, "SD": 29,
+    "TN": 30, "TX": 30, "UT": 35, "VT": 36, "VA": 32, "WA": 32,
+    "WV": 22, "WI": 33, "WY": 36
+  }
+}

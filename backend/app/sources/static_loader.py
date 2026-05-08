@@ -112,3 +112,154 @@ def fetch_fema(_db: Session, locations: list[Location]) -> list[tuple[int, str, 
         if abbr and abbr in state_data:
             out.append((loc.id, "hazard.fema_nri", float(state_data[abbr]), src, yr))
     return out
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Generic helpers + the new curated metrics added in 2026-05.
+# ──────────────────────────────────────────────────────────────────────────
+
+
+def _state_keyed_simple(
+    file: str, metric_key: str, locations: list[Location]
+) -> list[tuple[int, str, float | None, str, int]]:
+    """Emit one metric per location from a {state_abbr: scalar} JSON file."""
+    blob = _load(file)
+    src, yr = blob["_meta"]["source"], int(blob["_meta"]["source_year"])
+    data = blob["data"]
+    out: list[tuple[int, str, float | None, str, int]] = []
+    for loc in locations:
+        abbr = loc.state_abbr
+        if abbr and abbr in data:
+            out.append((loc.id, metric_key, float(data[abbr]), src, yr))
+    return out
+
+
+def _state_keyed_multi(
+    file: str, field_to_metric: dict[str, str], locations: list[Location]
+) -> list[tuple[int, str, float | None, str, int]]:
+    """Emit multiple metrics per location from a {state_abbr: {field: scalar, ...}} JSON file."""
+    blob = _load(file)
+    src, yr = blob["_meta"]["source"], int(blob["_meta"]["source_year"])
+    data = blob["data"]
+    out: list[tuple[int, str, float | None, str, int]] = []
+    for loc in locations:
+        abbr = loc.state_abbr
+        if not abbr or abbr not in data:
+            continue
+        d = data[abbr]
+        for field, metric_key in field_to_metric.items():
+            v = d.get(field)
+            if v is not None:
+                out.append((loc.id, metric_key, float(v), src, yr))
+    return out
+
+
+def fetch_insurance(_db: Session, locations: list[Location]):
+    return _state_keyed_simple("state_insurance.json", "housing.insurance_avg_premium", locations)
+
+
+def fetch_taxes_extra(_db: Session, locations: list[Location]):
+    return _state_keyed_multi(
+        "state_taxes_extra.json",
+        {
+            "retirement_burden": "tax.retirement.burden_score",
+            "capital_gains_top": "tax.capital_gains.top_rate",
+        },
+        locations,
+    )
+
+
+def fetch_housing_appreciation(_db: Session, locations: list[Location]):
+    return _state_keyed_simple(
+        "state_housing_appreciation.json", "housing.appreciation_10yr_cagr", locations
+    )
+
+
+def fetch_nri_components(_db: Session, locations: list[Location]):
+    """Hurricane / wildfire / tornado / flood. County overlay if available."""
+    state_blob = _load("state_nri_components.json")
+    src, yr = state_blob["_meta"]["source"], int(state_blob["_meta"]["source_year"])
+    state_data = state_blob["data"]
+
+    county_data: dict[str, dict[str, float]] = {}
+    county_path = STATIC_DIR / "county_nri_components.json"
+    if county_path.exists():
+        try:
+            cb = json.loads(county_path.read_text())
+            county_data = {
+                k: {kk: float(vv) for kk, vv in v.items()}
+                for k, v in cb.get("data", {}).items()
+            }
+        except Exception as e:  # noqa: BLE001
+            log.warning("Failed to load county_nri_components.json: %s", e)
+
+    fields = {
+        "hurricane": "hazard.hurricane",
+        "wildfire": "hazard.wildfire",
+        "tornado": "hazard.tornado",
+        "flood": "hazard.flood",
+    }
+    out: list[tuple[int, str, float | None, str, int]] = []
+    for loc in locations:
+        if loc.level == GeoLevel.county and loc.geoid in county_data:
+            d = county_data[loc.geoid]
+            for f, mk in fields.items():
+                if f in d:
+                    out.append((loc.id, mk, float(d[f]), src, yr))
+            continue
+        abbr = loc.state_abbr
+        if abbr and abbr in state_data:
+            d = state_data[abbr]
+            for f, mk in fields.items():
+                if f in d:
+                    out.append((loc.id, mk, float(d[f]), src, yr))
+    return out
+
+
+def fetch_pm25(_db: Session, locations: list[Location]):
+    return _state_keyed_simple("state_pm25.json", "env.pm25_annual", locations)
+
+
+def fetch_heat_index(_db: Session, locations: list[Location]):
+    return _state_keyed_simple("state_heat_index.json", "climate.summer_heat_index_f", locations)
+
+
+def fetch_utilities(_db: Session, locations: list[Location]):
+    return _state_keyed_multi(
+        "state_utilities.json",
+        {
+            "electricity_cents_kwh": "utility.electricity_rate",
+            "broadband_100_20_pct": "infra.broadband_100_20_pct",
+        },
+        locations,
+    )
+
+
+def fetch_education(_db: Session, locations: list[Location]):
+    return _state_keyed_simple("state_education.json", "edu.k12_proficiency_pct", locations)
+
+
+def fetch_health(_db: Session, locations: list[Location]):
+    return _state_keyed_multi(
+        "state_health.json",
+        {
+            "primary_care_per_100k": "health.primary_care_per_100k",
+            "life_expectancy": "health.life_expectancy_years",
+        },
+        locations,
+    )
+
+
+def fetch_growth(_db: Session, locations: list[Location]):
+    return _state_keyed_multi(
+        "state_growth.json",
+        {
+            "pop_growth_5yr_pct": "pop.growth_5yr_pct",
+            "job_growth_5yr_pct": "employment.job_growth_5yr_pct",
+        },
+        locations,
+    )
+
+
+def fetch_politics(_db: Session, locations: list[Location]):
+    return _state_keyed_simple("state_politics.json", "politics.partisan_lean_2024", locations)

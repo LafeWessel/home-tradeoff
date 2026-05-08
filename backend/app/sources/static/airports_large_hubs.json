@@ -1,0 +1,41 @@
+{
+  "_meta": {
+    "source": "FAA list of large-hub airports (curated)",
+    "source_year": 2024,
+    "notes": "FAA classifies airports handling ≥1% of total US enplanements as 'large hubs'. Coordinates are runway centroid (approx)."
+  },
+  "airports": [
+    {"code": "ATL", "name": "Hartsfield–Jackson Atlanta",        "lat": 33.6407, "lon":  -84.4277},
+    {"code": "BOS", "name": "Boston Logan",                       "lat": 42.3656, "lon":  -71.0096},
+    {"code": "BWI", "name": "Baltimore/Washington",               "lat": 39.1754, "lon":  -76.6683},
+    {"code": "CLT", "name": "Charlotte Douglas",                  "lat": 35.2140, "lon":  -80.9431},
+    {"code": "DCA", "name": "Reagan National (Washington)",       "lat": 38.8521, "lon":  -77.0377},
+    {"code": "DEN", "name": "Denver International",               "lat": 39.8561, "lon": -104.6737},
+    {"code": "DFW", "name": "Dallas/Fort Worth",                  "lat": 32.8998, "lon":  -97.0403},
+    {"code": "DTW", "name": "Detroit Metro",                      "lat": 42.2124, "lon":  -83.3534},
+    {"code": "EWR", "name": "Newark Liberty",                     "lat": 40.6925, "lon":  -74.1687},
+    {"code": "FLL", "name": "Fort Lauderdale–Hollywood",          "lat": 26.0726, "lon":  -80.1527},
+    {"code": "HNL", "name": "Honolulu (Daniel K. Inouye)",        "lat": 21.3187, "lon": -157.9224},
+    {"code": "IAD", "name": "Washington Dulles",                  "lat": 38.9531, "lon":  -77.4565},
+    {"code": "IAH", "name": "Houston George Bush Intercontinental","lat": 29.9844, "lon":  -95.3414},
+    {"code": "JFK", "name": "John F. Kennedy (NYC)",              "lat": 40.6413, "lon":  -73.7781},
+    {"code": "LAS", "name": "Harry Reid (Las Vegas)",             "lat": 36.0840, "lon": -115.1537},
+    {"code": "LAX", "name": "Los Angeles International",          "lat": 33.9416, "lon": -118.4085},
+    {"code": "LGA", "name": "LaGuardia (NYC)",                    "lat": 40.7769, "lon":  -73.8740},
+    {"code": "MCO", "name": "Orlando International",              "lat": 28.4312, "lon":  -81.3081},
+    {"code": "MDW", "name": "Chicago Midway",                     "lat": 41.7868, "lon":  -87.7522},
+    {"code": "MIA", "name": "Miami International",                "lat": 25.7959, "lon":  -80.2870},
+    {"code": "MSP", "name": "Minneapolis–Saint Paul",             "lat": 44.8848, "lon":  -93.2223},
+    {"code": "MSY", "name": "Louis Armstrong New Orleans",        "lat": 29.9934, "lon":  -90.2580},
+    {"code": "ORD", "name": "Chicago O'Hare",                     "lat": 41.9742, "lon":  -87.9073},
+    {"code": "PDX", "name": "Portland International",             "lat": 45.5887, "lon": -122.5975},
+    {"code": "PHL", "name": "Philadelphia International",         "lat": 39.8744, "lon":  -75.2424},
+    {"code": "PHX", "name": "Phoenix Sky Harbor",                 "lat": 33.4373, "lon": -112.0078},
+    {"code": "SAN", "name": "San Diego International",            "lat": 32.7338, "lon": -117.1933},
+    {"code": "SEA", "name": "Seattle–Tacoma",                     "lat": 47.4502, "lon": -122.3088},
+    {"code": "SFO", "name": "San Francisco International",        "lat": 37.6188, "lon": -122.3754},
+    {"code": "SLC", "name": "Salt Lake City International",       "lat": 40.7899, "lon": -111.9791},
+    {"code": "STL", "name": "St. Louis Lambert",                  "lat": 38.7470, "lon":  -90.3601},
+    {"code": "TPA", "name": "Tampa International",                "lat": 27.9755, "lon":  -82.5332}
+  ]
+}

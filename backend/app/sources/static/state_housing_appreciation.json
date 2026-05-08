@@ -1,0 +1,18 @@
+{
+  "_meta": {
+    "source": "FHFA House Price Index, all-transactions (curated)",
+    "source_year": 2024,
+    "notes": "10-year compound annual growth rate (%) of the FHFA HPI through 2024Q4, by state. Approximate values — refresh from FHFA quarterly releases."
+  },
+  "data": {
+    "AL": 6.8, "AK": 2.5, "AZ": 9.5, "AR": 6.2, "CA": 6.7, "CO": 7.2,
+    "CT": 4.5, "DE": 5.8, "DC": 4.0, "FL": 9.2, "GA": 7.8, "HI": 5.5,
+    "ID": 10.1,"IL": 4.2, "IN": 7.0, "IA": 5.0, "KS": 5.8, "KY": 6.2,
+    "LA": 3.0, "ME": 7.5, "MD": 4.5, "MA": 6.5, "MI": 7.2, "MN": 5.5,
+    "MS": 5.0, "MO": 6.4, "MT": 9.0, "NE": 6.5, "NV": 8.5, "NH": 8.0,
+    "NJ": 5.5, "NM": 6.0, "NY": 4.8, "NC": 7.8, "ND": 3.8, "OH": 6.5,
+    "OK": 5.5, "OR": 6.8, "PA": 5.5, "RI": 7.5, "SC": 7.5, "SD": 6.5,
+    "TN": 8.5, "TX": 7.0, "UT": 8.8, "VT": 6.5, "VA": 5.0, "WA": 7.5,
+    "WV": 3.8, "WI": 6.0, "WY": 6.5
+  }
+}

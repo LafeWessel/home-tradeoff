@@ -68,6 +68,7 @@ METRIC_DEFS: list[tuple[str, list[str], Any]] = [
     ("housing.median_value", ["B25077_001E"], _identity("B25077_001E")),
     ("housing.median_rent", ["B25064_001E"], _identity("B25064_001E")),
     ("housing.owner_occupied_pct", ["B25003_001E", "B25003_002E"], _owner_occupied_pct),
+    ("tax.property.median_annual_bill", ["B25103_001E"], _identity("B25103_001E")),
     (
         "edu.bachelors_or_higher_pct",
         ["B15003_001E", "B15003_022E", "B15003_023E", "B15003_024E", "B15003_025E"],

@@ -1,0 +1,18 @@
+{
+  "_meta": {
+    "source": "EPA Air Quality System annual PM2.5 design-value averages (curated)",
+    "source_year": 2023,
+    "notes": "Approximate state-wide annual mean PM2.5 (µg/m³). WHO guideline 5 µg/m³, US NAAQS 9 µg/m³. State averages mask intra-state variation (urban vs rural)."
+  },
+  "data": {
+    "AL": 8.0, "AK": 5.0, "AZ": 7.5, "AR": 8.5, "CA": 11.5, "CO": 6.5,
+    "CT": 7.0, "DE": 8.0, "DC": 7.5, "FL": 7.0, "GA": 8.5, "HI": 5.5,
+    "ID": 6.5, "IL": 9.0, "IN": 9.0, "IA": 8.0, "KS": 7.5, "KY": 8.0,
+    "LA": 8.5, "ME": 5.5, "MD": 7.5, "MA": 6.5, "MI": 8.0, "MN": 7.0,
+    "MS": 8.5, "MO": 8.0, "MT": 6.0, "NE": 7.0, "NV": 6.5, "NH": 5.5,
+    "NJ": 8.0, "NM": 6.0, "NY": 7.0, "NC": 7.5, "ND": 4.5, "OH": 8.5,
+    "OK": 7.5, "OR": 7.5, "PA": 8.5, "RI": 6.5, "SC": 7.5, "SD": 5.0,
+    "TN": 8.0, "TX": 8.0, "UT": 7.5, "VT": 5.5, "VA": 7.5, "WA": 7.5,
+    "WV": 8.0, "WI": 7.5, "WY": 4.5
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "_meta": {
+    "source": "MIT Election Lab / Cook Political Report — 2024 presidential margin (curated)",
+    "source_year": 2024,
+    "notes": "Signed margin in percentage points: positive = Republican win, negative = Democratic win. Approximate 2024 certified results."
+  },
+  "data": {
+    "AL":  30, "AK":  13, "AZ":   5, "AR":  21, "CA": -20, "CO": -11,
+    "CT": -15, "DE": -15, "DC": -87, "FL":  13, "GA":   2, "HI": -22,
+    "ID":  37, "IL": -11, "IN":  19, "IA":  14, "KS":  16, "KY":  31,
+    "LA":  22, "ME":  -7, "MD": -26, "MA": -25, "MI":   2, "MN":  -4,
+    "MS":  22, "MO":  18, "MT":  20, "NE":  21, "NV":   3, "NH":  -3,
+    "NJ":  -6, "NM":  -6, "NY": -13, "NC":   3, "ND":  37, "OH":  11,
+    "OK":  34, "OR": -14, "PA":   2, "RI": -14, "SC":  18, "SD":  31,
+    "TN":  28, "TX":  13, "UT":  21, "VT": -32, "VA":  -6, "WA": -19,
+    "WV":  42, "WI":   1, "WY":  46
+  }
+}

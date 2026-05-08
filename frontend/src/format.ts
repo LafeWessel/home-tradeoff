@@ -11,8 +11,27 @@ export function formatValue(v: number | null | undefined, m: MetricDef): string 
         : `$${Math.round(v).toLocaleString()}`;
     case "$/mo":
       return `$${Math.round(v).toLocaleString()}/mo`;
+    case "$/yr":
+      return `$${Math.round(v).toLocaleString()}/yr`;
     case "%":
       return `${v.toFixed(2)}%`;
+    case "ppts":
+      return `${v >= 0 ? "+" : ""}${v.toFixed(1)}`;
+    case "¢/kWh":
+      return `${v.toFixed(1)}¢`;
+    case "µg/m³":
+      return `${v.toFixed(1)} µg/m³`;
+    case "mi":
+      return v >= 100 ? `${Math.round(v)} mi` : `${v.toFixed(1)} mi`;
+    case "0–100":
+    case "0–3":
+      return v.toFixed(0);
+    case "days":
+      return `${Math.round(v)} d`;
+    case "mph":
+      return `${v.toFixed(1)} mph`;
+    case "index (US=100)":
+      return v.toFixed(1);
     case "°F":
       return `${Math.round(v)}°F`;
     case "in":
@@ -60,10 +79,14 @@ const CATEGORY_LABELS: Record<string, string> = {
   taxes: "Taxes",
   housing: "Housing",
   cost_of_living: "Cost of living",
+  utilities: "Utilities & connectivity",
   climate: "Climate & hazards",
   crime: "Crime",
   employment: "Employment",
-  demographics: "Demographics",
+  health: "Health",
+  demographics: "Demographics & education",
+  infrastructure: "Infrastructure",
+  politics: "Politics",
 };
 
 export function categoryLabel(c: string): string {
@@ -74,10 +97,14 @@ const CATEGORY_ORDER = [
   "taxes",
   "housing",
   "cost_of_living",
+  "utilities",
   "climate",
   "crime",
   "employment",
+  "health",
   "demographics",
+  "infrastructure",
+  "politics",
 ];
 
 export function sortedCategories(cats: string[]): string[] {
