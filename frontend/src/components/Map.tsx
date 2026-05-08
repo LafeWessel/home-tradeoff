@@ -4,8 +4,6 @@ import { useApp } from "../store";
 import { api } from "../api/client";
 import type { Location } from "../types";
 
-// Public OSM raster tiles via OpenStreetMap. Basemap data is intentionally
-// not cached locally per project requirements.
 const STYLE: maplibregl.StyleSpecification = {
   version: 8,
   sources: {
@@ -20,17 +18,27 @@ const STYLE: maplibregl.StyleSpecification = {
   layers: [{ id: "osm-tiles", type: "raster", source: "osm" }],
 };
 
-interface MarkerEntry {
+interface StateMarkerEntry {
   marker: Marker;
   geoid: string;
+}
+
+interface NonStateMarkerEntry {
+  marker: Marker;
+  el: HTMLElement;
+}
+
+function nonStateColor(loc: Location) {
+  return loc.level === "place" ? "#3fb950" : "#d29922";
 }
 
 export function MapPane() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MlMap | null>(null);
-  const stateMarkersRef = useRef<MarkerEntry[]>([]);
-  const selectedMarkersRef = useRef<Map<string, Marker>>(new Map());
+  const stateMarkersRef = useRef<StateMarkerEntry[]>([]);
+  const nonStateMarkersRef = useRef<Map<string, NonStateMarkerEntry>>(new Map());
   const selected = useApp((s) => s.selected);
+  const deselected = useApp((s) => s.deselected);
   const addLocation = useApp((s) => s.addLocation);
 
   useEffect(() => {
@@ -45,7 +53,6 @@ export function MapPane() {
     mapRef.current = map;
 
     map.on("load", async () => {
-      // Plant a marker per state. Empty-q search returns all rows of that level.
       const stateList = await api
         .searchLocations("", { level: "state", limit: 100 })
         .catch(() => [] as Location[]);
@@ -55,7 +62,7 @@ export function MapPane() {
         const el = document.createElement("div");
         el.className = "state-marker";
         el.style.cssText =
-          "width:18px;height:18px;border-radius:50%;background:#58a6ff;border:2px solid #0e1116;cursor:pointer;box-shadow:0 0 4px #0e1116;";
+          "width:18px;height:18px;border-radius:50%;background:#58a6ff;border:2px solid #0e1116;cursor:pointer;box-shadow:0 0 4px #0e1116;transition:opacity 0.15s;";
         el.title = s.name;
         const marker = new maplibregl.Marker({ element: el }).setLngLat([s.lon, s.lat]).addTo(map);
         const popup = new Popup({ offset: 14, closeButton: false }).setText(s.display_name);
@@ -70,43 +77,65 @@ export function MapPane() {
     });
   }, [addLocation]);
 
-  // Sync selected markers (for non-state selections)
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
-    const wantedGeoids = new Set(selected.map((l) => l.geoid));
+    const selectedSet = new Set(selected.map((l) => l.geoid));
+    const deselectedSet = new Set(deselected.map((l) => l.geoid));
 
-    // Remove markers for locations no longer selected
-    for (const [geoid, m] of selectedMarkersRef.current.entries()) {
-      if (!wantedGeoids.has(geoid)) {
-        m.remove();
-        selectedMarkersRef.current.delete(geoid);
+    // Update state marker colors: green=selected, dimmed=deselected, blue=unvisited
+    for (const entry of stateMarkersRef.current) {
+      const el = entry.marker.getElement() as HTMLElement;
+      if (selectedSet.has(entry.geoid)) {
+        el.style.background = "#3fb950";
+        el.style.opacity = "1";
+      } else if (deselectedSet.has(entry.geoid)) {
+        el.style.background = "#58a6ff";
+        el.style.opacity = "0.35";
+      } else {
+        el.style.background = "#58a6ff";
+        el.style.opacity = "1";
       }
     }
 
-    // Highlight selected state markers (recolor) and add markers for non-state selections
-    for (const entry of stateMarkersRef.current) {
-      const el = entry.marker.getElement() as HTMLElement;
-      el.style.background = wantedGeoids.has(entry.geoid) ? "#3fb950" : "#58a6ff";
+    // Remove non-state markers that are no longer in either list
+    for (const [geoid, { marker }] of nonStateMarkersRef.current.entries()) {
+      if (!selectedSet.has(geoid) && !deselectedSet.has(geoid)) {
+        marker.remove();
+        nonStateMarkersRef.current.delete(geoid);
+      }
     }
 
-    for (const loc of selected) {
-      if (loc.level === "state") continue; // already represented
-      if (selectedMarkersRef.current.has(loc.geoid)) continue;
+    // Add or update markers for all non-state locations (selected + deselected)
+    for (const loc of [...selected, ...deselected]) {
+      if (loc.level === "state") continue;
       if (loc.lat == null || loc.lon == null) continue;
-      const el = document.createElement("div");
-      el.style.cssText = `
-        width:14px;height:14px;border-radius:50%;
-        background:${loc.level === "place" ? "#3fb950" : "#d29922"};
-        border:2px solid #0e1116;cursor:pointer;box-shadow:0 0 4px #0e1116;
-      `;
-      el.title = loc.display_name;
-      const m = new maplibregl.Marker({ element: el }).setLngLat([loc.lon, loc.lat]).addTo(map);
-      selectedMarkersRef.current.set(loc.geoid, m);
+      const isSelected = selectedSet.has(loc.geoid);
+      const color = isSelected ? nonStateColor(loc) : "#6e7681";
+      const opacity = isSelected ? "1" : "0.45";
+
+      const existing = nonStateMarkersRef.current.get(loc.geoid);
+      if (existing) {
+        existing.el.style.background = color;
+        existing.el.style.opacity = opacity;
+      } else {
+        const el = document.createElement("div");
+        el.style.cssText = `
+          width:14px;height:14px;border-radius:50%;
+          background:${color};border:2px solid #0e1116;
+          cursor:pointer;box-shadow:0 0 4px #0e1116;
+          opacity:${opacity};transition:opacity 0.15s;
+        `;
+        el.title = loc.display_name;
+        const marker = new maplibregl.Marker({ element: el })
+          .setLngLat([loc.lon, loc.lat])
+          .addTo(map);
+        nonStateMarkersRef.current.set(loc.geoid, { marker, el });
+      }
     }
 
-    // Fly-to fit when selection changes
+    // Fly to fit only the active selected locations
     if (selected.length > 0) {
       const pts = selected.filter((l) => l.lat != null && l.lon != null);
       if (pts.length === 1) {
@@ -123,7 +152,7 @@ export function MapPane() {
         );
       }
     }
-  }, [selected]);
+  }, [selected, deselected]);
 
   return (
     <div className="map-pane">

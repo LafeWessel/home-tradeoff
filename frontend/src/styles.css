@@ -117,7 +117,10 @@ body, html, #root {
   text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border);
   vertical-align: top;
 }
-.compare th { font-size: 11px; text-transform: uppercase; color: var(--text-dim); letter-spacing: 0.5px; }
+.compare th {
+  font-size: 11px; text-transform: uppercase; color: var(--text-dim); letter-spacing: 0.5px;
+  position: sticky; top: 0; z-index: 2; background: var(--panel);
+}
 .compare tr.cat-header td {
   background: var(--panel-elev); font-weight: 600; padding: 8px;
   font-size: 11px; text-transform: uppercase; color: var(--text-dim); letter-spacing: 0.7px;
@@ -143,11 +146,12 @@ body, html, #root {
 .score-aggregate { font-weight: 700; font-size: 14px; }
 
 /* Preferences */
-.prefs { flex: 1; padding: 12px; overflow-y: auto; }
+.prefs { flex: 1; padding: 12px; overflow-x: hidden; overflow-y: auto; min-width: 0; }
 .prefs .preset-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
 .prefs .preset-list .preset-btn {
   padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border);
   background: var(--bg); color: var(--text); cursor: pointer; font-size: 12px;
+  max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .prefs .preset-list .preset-btn.active { background: var(--accent-bg); border-color: var(--accent); }
 .prefs .new-preset { display: flex; gap: 6px; margin-bottom: 12px; }
@@ -186,7 +190,7 @@ body, html, #root {
 .pref-row .controls input, .pref-row .controls select {
   background: var(--bg); color: var(--text); border: 1px solid var(--border);
   border-radius: 4px; padding: 4px 6px; font-size: 13px;
-  font-variant-numeric: tabular-nums;
+  font-variant-numeric: tabular-nums; min-width: 0; width: 100%;
 }
 .pref-row .weight {
   display: flex; align-items: center; gap: 8px; margin-top: 8px;
