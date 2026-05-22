@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from .api import geo as geo_api
 from .api import locations as locations_api
 from .api import metrics as metrics_api
 from .api import presets as presets_api
@@ -46,6 +47,7 @@ def health() -> dict:
     return {"status": "ok"}
 
 
+app.include_router(geo_api.router)
 app.include_router(metrics_api.router)
 app.include_router(locations_api.router)
 app.include_router(presets_api.router)

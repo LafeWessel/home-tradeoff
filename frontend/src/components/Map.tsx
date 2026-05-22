@@ -4,10 +4,24 @@ import { useApp } from "../store";
 import { api } from "../api/client";
 import type { Location } from "../types";
 
-const STATE_GEO_URL =
-  "https://eric.clst.org/assets/wiki/uploads/Stuff/gz_2010_us_040_00_500k.json";
-const COUNTY_GEO_URL =
-  "https://eric.clst.org/assets/wiki/uploads/Stuff/gz_2010_us_050_00_500k.json";
+const STATE_GEO_URL = "/api/geo/states";
+const COUNTY_GEO_URL = "/api/geo/counties";
+const GEO_CACHE = "home-tradeoff-geo-v1";
+
+async function fetchGeoJson(url: string): Promise<unknown> {
+  if ("caches" in globalThis) {
+    const cache = await caches.open(GEO_CACHE);
+    const hit = await cache.match(url);
+    if (hit) return hit.json();
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(`${url} -> ${resp.status}`);
+    await cache.put(url, resp.clone());
+    return resp.json();
+  }
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error(`${url} -> ${resp.status}`);
+  return resp.json();
+}
 
 const STYLE: maplibregl.StyleSpecification = {
   version: 8,
@@ -89,7 +103,7 @@ export function MapPane() {
     map.on("load", async () => {
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const stateGeo: any = await fetch(STATE_GEO_URL).then((r) => r.json());
+        const stateGeo: any = await fetchGeoJson(STATE_GEO_URL);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         stateGeo.features.forEach((f: any) => { f.id = f.properties.STATE; });
 
@@ -194,8 +208,7 @@ export function MapPane() {
       countiesLoadedRef.current = true;
       setCountiesLoading(true);
 
-      fetch(COUNTY_GEO_URL)
-        .then((r) => r.json())
+      fetchGeoJson(COUNTY_GEO_URL)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .then((countyGeo: any) => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
