@@ -380,22 +380,6 @@ export function MapPane() {
       }
     }
 
-    if (selected.length > 0) {
-      const pts = selected.filter((l) => l.lat != null && l.lon != null);
-      if (pts.length === 1) {
-        map.flyTo({ center: [pts[0].lon!, pts[0].lat!], zoom: pts[0].level === "state" ? 5 : 8 });
-      } else if (pts.length > 1) {
-        const lons = pts.map((p) => p.lon!);
-        const lats = pts.map((p) => p.lat!);
-        map.fitBounds(
-          [
-            [Math.min(...lons) - 1, Math.min(...lats) - 1],
-            [Math.max(...lons) + 1, Math.max(...lats) + 1],
-          ],
-          { padding: 60, duration: 800 }
-        );
-      }
-    }
   }, [selected, deselected]);
 
   return (
