@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import maplibregl, { Map as MlMap, Marker } from "maplibre-gl";
+import maplibregl, { Map as MlMap, Marker, Popup } from "maplibre-gl";
 import { useApp } from "../store";
 import { api } from "../api/client";
 import type { Location } from "../types";
@@ -59,19 +59,42 @@ export function MapPane() {
   const locationCacheRef = useRef<Map<string, Location>>(new Map());
   const hoveredStateRef = useRef<string | null>(null);
   const hoveredCountyRef = useRef<string | null>(null);
+  const hoverPopupRef = useRef<Popup | null>(null);
   const activeFeatureStatesRef = useRef<Set<string>>(new Set());
   const countiesLoadedRef = useRef(false);
 
   const [mapMode, setMapMode] = useState<"states" | "counties">("states");
   const [countiesLoading, setCountiesLoading] = useState(false);
   const mapModeRef = useRef<"states" | "counties">("states");
-  useEffect(() => { mapModeRef.current = mapMode; }, [mapMode]);
+  useEffect(() => {
+    mapModeRef.current = mapMode;
+    const map = mapRef.current;
+    if (!map) return;
+    if (hoveredStateRef.current) {
+      if (map.getSource("states-geo")) {
+        map.setFeatureState({ source: "states-geo", id: hoveredStateRef.current }, { hover: false });
+      }
+      hoveredStateRef.current = null;
+    }
+    if (hoveredCountyRef.current) {
+      if (map.getSource("counties-geo")) {
+        map.setFeatureState({ source: "counties-geo", id: hoveredCountyRef.current }, { hover: false });
+      }
+      hoveredCountyRef.current = null;
+    }
+    map.getCanvas().style.cursor = "";
+    hoverPopupRef.current?.remove();
+    hoverPopupRef.current = null;
+  }, [mapMode]);
 
   const selected = useApp((s) => s.selected);
   const deselected = useApp((s) => s.deselected);
   const addLocation = useApp((s) => s.addLocation);
   const addLocationRef = useRef(addLocation);
   useEffect(() => { addLocationRef.current = addLocation; }, [addLocation]);
+  const removeLocation = useApp((s) => s.removeLocation);
+  const removeLocationRef = useRef(removeLocation);
+  useEffect(() => { removeLocationRef.current = removeLocation; }, [removeLocation]);
   const selectedRef = useRef(selected);
   const deselectedRef = useRef(deselected);
   useEffect(() => {
@@ -142,6 +165,7 @@ export function MapPane() {
         });
 
         map.on("mousemove", "states-fill", (e) => {
+          if (mapModeRef.current !== "states") return;
           const feat = e.features?.[0];
           if (!feat) return;
           const id = String(feat.id);
@@ -151,7 +175,15 @@ export function MapPane() {
           }
           hoveredStateRef.current = id;
           map.setFeatureState({ source: "states-geo", id }, { hover: true });
-          map.getCanvas().style.cursor = mapModeRef.current === "states" ? "pointer" : "";
+          map.getCanvas().style.cursor = "pointer";
+          hoverPopupRef.current?.remove();
+          const loc = locationCacheRef.current.get(id);
+          if (loc?.lat != null && loc?.lon != null && selectedRef.current.some((l) => l.geoid === id)) {
+            hoverPopupRef.current = new Popup({ closeButton: false, closeOnClick: false, offset: 4 })
+              .setLngLat([loc.lon, loc.lat])
+              .setText(loc.display_name)
+              .addTo(map);
+          }
         });
 
         map.on("mouseleave", "states-fill", () => {
@@ -159,7 +191,9 @@ export function MapPane() {
             map.setFeatureState({ source: "states-geo", id: hoveredStateRef.current }, { hover: false });
             hoveredStateRef.current = null;
           }
-          map.getCanvas().style.cursor = "";
+          hoverPopupRef.current?.remove();
+          hoverPopupRef.current = null;
+          if (mapModeRef.current === "states") map.getCanvas().style.cursor = "";
         });
 
         map.on("click", "states-fill", async (e) => {
@@ -173,6 +207,13 @@ export function MapPane() {
             if (loc) locationCacheRef.current.set(geoid, loc);
           }
           if (loc) addLocationRef.current(loc);
+        });
+
+        map.on("contextmenu", "states-fill", (e) => {
+          e.originalEvent.preventDefault();
+          const feat = e.features?.[0];
+          if (!feat) return;
+          removeLocationRef.current(String(feat.id));
         });
 
         // Apply any already-selected states (e.g. from persisted store)
@@ -253,6 +294,7 @@ export function MapPane() {
           });
 
           map.on("mousemove", "counties-fill", (e) => {
+            if (mapModeRef.current !== "counties") return;
             const feat = e.features?.[0];
             if (!feat) return;
             const id = String(feat.id);
@@ -262,7 +304,15 @@ export function MapPane() {
             }
             hoveredCountyRef.current = id;
             map.setFeatureState({ source: "counties-geo", id }, { hover: true });
-            map.getCanvas().style.cursor = mapModeRef.current === "counties" ? "pointer" : "";
+            map.getCanvas().style.cursor = "pointer";
+            hoverPopupRef.current?.remove();
+            const loc = locationCacheRef.current.get(id);
+            if (loc?.lat != null && loc?.lon != null && selectedRef.current.some((l) => l.geoid === id)) {
+              hoverPopupRef.current = new Popup({ closeButton: false, closeOnClick: false, offset: 4 })
+                .setLngLat([loc.lon, loc.lat])
+                .setText(loc.display_name)
+                .addTo(map);
+            }
           });
 
           map.on("mouseleave", "counties-fill", () => {
@@ -270,7 +320,9 @@ export function MapPane() {
               map.setFeatureState({ source: "counties-geo", id: hoveredCountyRef.current }, { hover: false });
               hoveredCountyRef.current = null;
             }
-            map.getCanvas().style.cursor = "";
+            hoverPopupRef.current?.remove();
+            hoverPopupRef.current = null;
+            if (mapModeRef.current === "counties") map.getCanvas().style.cursor = "";
           });
 
           map.on("click", "counties-fill", async (e) => {
@@ -284,6 +336,13 @@ export function MapPane() {
               if (loc) locationCacheRef.current.set(geoid, loc);
             }
             if (loc) addLocationRef.current(loc);
+          });
+
+          map.on("contextmenu", "counties-fill", (e) => {
+            e.originalEvent.preventDefault();
+            const feat = e.features?.[0];
+            if (!feat) return;
+            removeLocationRef.current(String(feat.id));
           });
 
           // Apply already-selected/deselected counties
@@ -373,6 +432,10 @@ export function MapPane() {
           opacity:${opacity};transition:opacity 0.15s;
         `;
         el.title = loc.display_name;
+        el.addEventListener("contextmenu", (ev) => {
+          ev.preventDefault();
+          removeLocationRef.current(loc.geoid);
+        });
         const marker = new maplibregl.Marker({ element: el })
           .setLngLat([loc.lon, loc.lat])
           .addTo(map);
