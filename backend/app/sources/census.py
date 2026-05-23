@@ -23,7 +23,7 @@ from .http_cache import cached_get_json
 
 log = logging.getLogger(__name__)
 
-ACS_YEAR = 2023  # 5-year ACS released Dec 2024 — covers 2019-2023
+ACS_YEAR = 2024  # 5-year ACS released Dec 2025 — covers 2020-2024
 
 # (metric_key, list of ACS variable codes used to compute it, computer fn)
 # computer fn takes the dict {var_code -> float | None} and returns float | None

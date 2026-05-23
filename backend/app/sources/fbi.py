@@ -31,7 +31,7 @@ _breaker_until: float = 0.0
 
 
 def fetch_for_locations(
-    db: Session, locations: list[Location], year: int = 2023
+    db: Session, locations: list[Location], year: int = 2024
 ) -> list[tuple[int, str, float | None, str, int]]:
     global _breaker_until
 

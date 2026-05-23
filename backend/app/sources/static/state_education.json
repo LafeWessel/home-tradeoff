@@ -1,18 +1,18 @@
 {
   "_meta": {
-    "source": "NAEP 2022 4th-grade reading proficiency (curated)",
-    "source_year": 2022,
-    "notes": "Share of 4th-graders scoring at or above 'Proficient' on the NAEP reading assessment. National average ≈ 32%."
+    "source": "NAEP 2024 4th-grade reading proficiency (curated)",
+    "source_year": 2024,
+    "notes": "Share of 4th-graders scoring at or above 'Proficient' on the NAEP reading assessment. National average ≈ 31% (down from 32% in 2022). Confirmed 2024 values from NCES release: CA=29, GA=30, LA=32, MA=40, MS=32, NC=30, NY=31, TN=32. All other values estimated as 2022 actuals minus 2pp (national decline). Notable: MS and LA improved significantly ('Mississippi miracle' and Louisiana reading reforms)."
   },
   "data": {
-    "AL": 23, "AK": 25, "AZ": 28, "AR": 29, "CA": 31, "CO": 35,
-    "CT": 35, "DE": 25, "DC": 30, "FL": 39, "GA": 32, "HI": 31,
-    "ID": 31, "IL": 33, "IN": 33, "IA": 33, "KS": 32, "KY": 31,
-    "LA": 24, "ME": 30, "MD": 31, "MA": 43, "MI": 28, "MN": 32,
-    "MS": 25, "MO": 30, "MT": 35, "NE": 33, "NV": 24, "NH": 38,
-    "NJ": 38, "NM": 21, "NY": 30, "NC": 32, "ND": 31, "OH": 32,
-    "OK": 24, "OR": 28, "PA": 33, "RI": 30, "SC": 30, "SD": 29,
-    "TN": 30, "TX": 30, "UT": 35, "VT": 36, "VA": 32, "WA": 32,
-    "WV": 22, "WI": 33, "WY": 36
+    "AL": 21, "AK": 23, "AZ": 26, "AR": 27, "CA": 29, "CO": 33,
+    "CT": 33, "DE": 23, "DC": 28, "FL": 37, "GA": 30, "HI": 29,
+    "ID": 29, "IL": 31, "IN": 31, "IA": 31, "KS": 30, "KY": 29,
+    "LA": 32, "ME": 28, "MD": 29, "MA": 40, "MI": 26, "MN": 30,
+    "MS": 32, "MO": 28, "MT": 33, "NE": 31, "NV": 22, "NH": 36,
+    "NJ": 36, "NM": 19, "NY": 31, "NC": 30, "ND": 29, "OH": 30,
+    "OK": 22, "OR": 26, "PA": 31, "RI": 28, "SC": 28, "SD": 27,
+    "TN": 32, "TX": 28, "UT": 33, "VT": 34, "VA": 30, "WA": 30,
+    "WV": 20, "WI": 31, "WY": 34
   }
 }

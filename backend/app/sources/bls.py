@@ -33,7 +33,7 @@ def _series_id(loc: Location) -> str | None:
 
 
 def fetch_for_locations(
-    db: Session, locations: list[Location], year: int = 2024
+    db: Session, locations: list[Location], year: int = 2025
 ) -> list[tuple[int, str, float | None, str, int]]:
     by_series: dict[str, Location] = {}
     for loc in locations:
