@@ -61,6 +61,13 @@ body, html, #root {
   border: 1px solid var(--border); color: var(--text-dim);
   font-size: 12px; max-width: 360px; line-height: 1.4;
 }
+.maplibregl-popup-content {
+  background: var(--panel); color: var(--text);
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 5px 10px; font-size: 12px; font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
+.maplibregl-popup-tip { border-top-color: var(--panel) !important; border-bottom-color: var(--panel) !important; }
 .map-mode-toggle {
   position: absolute; top: 12px; right: 12px; z-index: 5;
   display: flex;

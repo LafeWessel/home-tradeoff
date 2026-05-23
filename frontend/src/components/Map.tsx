@@ -42,6 +42,24 @@ interface PlaceMarkerEntry {
   el: HTMLElement;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function bboxCenter(geometry: any): [number, number] {
+  let minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rings: number[][][] = geometry.type === "Polygon" ? geometry.coordinates
+    : geometry.type === "MultiPolygon" ? (geometry.coordinates as number[][][][]).flat(1)
+    : [];
+  for (const ring of rings) {
+    for (const [lng, lat] of ring) {
+      if (lng < minLng) minLng = lng;
+      if (lng > maxLng) maxLng = lng;
+      if (lat < minLat) minLat = lat;
+      if (lat > maxLat) maxLat = lat;
+    }
+  }
+  return [(minLng + maxLng) / 2, (minLat + maxLat) / 2];
+}
+
 const MAP_VIEW_KEY = "home-tradeoff-map-view";
 
 function savedMapView(): { center: [number, number]; zoom: number } {
@@ -178,12 +196,15 @@ export function MapPane() {
           map.getCanvas().style.cursor = "pointer";
           hoverPopupRef.current?.remove();
           const loc = locationCacheRef.current.get(id);
-          if (loc?.lat != null && loc?.lon != null && selectedRef.current.some((l) => l.geoid === id)) {
-            hoverPopupRef.current = new Popup({ closeButton: false, closeOnClick: false, offset: 4 })
-              .setLngLat([loc.lon, loc.lat])
-              .setText(loc.display_name)
-              .addTo(map);
-          }
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const name = loc?.display_name ?? (feat.properties as any)?.NAME ?? id;
+          const center: [number, number] = (loc?.lon != null && loc?.lat != null)
+            ? [loc.lon, loc.lat]
+            : bboxCenter(feat.geometry);
+          hoverPopupRef.current = new Popup({ closeButton: false, closeOnClick: false, offset: 8 })
+            .setLngLat(center)
+            .setText(name)
+            .addTo(map);
         });
 
         map.on("mouseleave", "states-fill", () => {
@@ -307,12 +328,16 @@ export function MapPane() {
             map.getCanvas().style.cursor = "pointer";
             hoverPopupRef.current?.remove();
             const loc = locationCacheRef.current.get(id);
-            if (loc?.lat != null && loc?.lon != null && selectedRef.current.some((l) => l.geoid === id)) {
-              hoverPopupRef.current = new Popup({ closeButton: false, closeOnClick: false, offset: 4 })
-                .setLngLat([loc.lon, loc.lat])
-                .setText(loc.display_name)
-                .addTo(map);
-            }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const props = feat.properties as any;
+            const name = loc?.display_name ?? (props?.NAME && props?.LSAD ? `${props.NAME} ${props.LSAD}` : props?.NAME ?? id);
+            const center: [number, number] = (loc?.lon != null && loc?.lat != null)
+              ? [loc.lon, loc.lat]
+              : bboxCenter(feat.geometry);
+            hoverPopupRef.current = new Popup({ closeButton: false, closeOnClick: false, offset: 8 })
+              .setLngLat(center)
+              .setText(name)
+              .addTo(map);
           });
 
           map.on("mouseleave", "counties-fill", () => {
