@@ -156,6 +156,22 @@ body, html, #root {
   font-size: 11px; text-transform: uppercase; color: var(--text-dim); letter-spacing: 0.7px;
   border-top: 1px solid var(--border);
 }
+.compare .metric-col-header { color: var(--text-dim); }
+.compare .loc-col-header {
+  text-align: center; font-size: 13px; font-weight: 700;
+  border-top: 3px solid transparent; padding-top: 10px;
+}
+.compare .loc-col-header.level-state  { border-top-color: var(--accent); color: var(--accent); }
+.compare .loc-col-header.level-county { border-top-color: var(--warn);   color: var(--warn);   }
+.compare .loc-col-header.level-place  { border-top-color: var(--good);   color: var(--good);   }
+.compare .loc-col-header .level-pill  { margin: 4px auto 0; display: table; }
+.compare .cat-header td { cursor: pointer; user-select: none; }
+.compare .cat-header td:hover { background: var(--bg); }
+.compare .cat-chevron { margin-right: 6px; font-size: 11px; opacity: 0.7; }
+.compare .cat-count {
+  float: right; font-size: 10px; color: var(--text-dim);
+  background: var(--bg); border-radius: 4px; padding: 1px 5px;
+}
 .compare .metric-label { color: var(--text); font-weight: 500; }
 .compare .metric-source { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
 .compare .resolved-tag {

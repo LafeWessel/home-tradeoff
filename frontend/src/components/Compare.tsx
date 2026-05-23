@@ -59,9 +59,12 @@ export function Compare({ metrics }: { metrics: MetricDef[] }) {
       <table>
         <thead>
           <tr>
-            <th style={{ width: "30%" }}>Metric</th>
+            <th className="metric-col-header" style={{ width: "30%" }}>Metric</th>
             {selected.map((l) => (
-              <th key={l.geoid}>{l.display_name}</th>
+              <th key={l.geoid} className={`loc-col-header level-${l.level}`}>
+                {l.display_name}
+                <div className={`level-pill ${l.level}`}>{l.level}</div>
+              </th>
             ))}
           </tr>
         </thead>
@@ -95,13 +98,18 @@ function CategoryRows({
   dataByGeoid: Map<string, LocData>;
   pendingGeoids: Set<string>;
 }) {
+  const [open, setOpen] = useState(true);
   const catMetrics = metrics.filter((m) => m.category === category);
   return (
     <>
-      <tr className="cat-header">
-        <td colSpan={selected.length + 1}>{categoryLabel(category)}</td>
+      <tr className="cat-header" onClick={() => setOpen((o) => !o)}>
+        <td colSpan={selected.length + 1}>
+          <span className="cat-chevron">{open ? "▾" : "▸"}</span>
+          {categoryLabel(category)}
+          <span className="cat-count">{catMetrics.length}</span>
+        </td>
       </tr>
-      {catMetrics.map((m) => (
+      {open && catMetrics.map((m) => (
         <MetricRow
           key={m.key}
           metric={m}
