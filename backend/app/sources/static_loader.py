@@ -274,3 +274,24 @@ def fetch_crime(_db: Session, locations: list[Location]):
         },
         locations,
     )
+
+
+def fetch_col_components(_db: Session, locations: list[Location]) -> list[tuple[int, str, float | None, str, int]]:
+    """Emit grocery index, childcare cost, and marketplace health premium from state_col_components.json."""
+    blob = _load("state_col_components.json")
+    out: list[tuple[int, str, float | None, str, int]] = []
+    sections = [
+        ("grocery_index", "col.grocery_index"),
+        ("childcare_infant_annual", "col.childcare_infant_annual"),
+        ("healthcare_marketplace_monthly", "col.healthcare_marketplace_monthly"),
+    ]
+    for field, metric_key in sections:
+        section = blob[field]
+        src = section["source"]
+        yr = int(section["source_year"])
+        data = section["data"]
+        for loc in locations:
+            abbr = loc.state_abbr
+            if abbr and abbr in data:
+                out.append((loc.id, metric_key, float(data[abbr]), src, yr))
+    return out

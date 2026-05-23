@@ -123,6 +123,40 @@ CATALOG: list[MetricDef] = [
         source_label="BEA RPP (curated)",
         finest_level="state",
     ),
+    MetricDef(
+        key="col.grocery_index",
+        label="Goods / grocery price index",
+        category="cost_of_living",
+        unit="index (US=100)",
+        direction=MetricDirection.lower_better,
+        description="BEA RPP goods component — price level of consumer goods (groceries, clothing, "
+        "household items) relative to US average (100). Ranges from ~93 (AR, MS) to ~114 (HI).",
+        source_label="BEA RPP Goods (curated)",
+        finest_level="state",
+    ),
+    MetricDef(
+        key="col.childcare_infant_annual",
+        label="Infant center-based care (annual)",
+        category="cost_of_living",
+        unit="$/yr",
+        direction=MetricDirection.lower_better,
+        description="Annual cost of full-time center-based infant care. "
+        "Ranges from ~$6,800 (MS) to ~$24,200 (DC).",
+        source_label="Child Care Aware of America",
+        finest_level="state",
+    ),
+    MetricDef(
+        key="col.healthcare_marketplace_monthly",
+        label="Marketplace health premium (age 40)",
+        category="cost_of_living",
+        unit="$/mo",
+        direction=MetricDirection.lower_better,
+        description="2024 benchmark silver plan monthly premium for a 40-year-old non-smoker, "
+        "unsubsidized. Reflects underlying healthcare cost levels by state. "
+        "Ranges from $344/mo (UT) to $808/mo (WY).",
+        source_label="KFF / CMS (curated)",
+        finest_level="state",
+    ),
     # ───── Climate ─────
     MetricDef(
         key="climate.jan_low_f",

@@ -166,6 +166,7 @@ def ensure_metric_values(
     _upsert(db, static_loader.fetch_growth(db, working))
     _upsert(db, static_loader.fetch_politics(db, working))
     _upsert(db, static_loader.fetch_crime(db, working))
+    _upsert(db, static_loader.fetch_col_components(db, working))
     _upsert(db, airport.fetch_for_locations(db, working))
 
     # ---- FBI CDE live overlay (state) ----

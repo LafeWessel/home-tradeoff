@@ -8,6 +8,7 @@ big or too irregular to hit a live API for every comparison.
 | `state_taxes.json` | Tax Foundation, NCSL, state DORs | Annual (Jan) | Income / sales / property / estate |
 | `state_climate.json` | NOAA NCEI 1991–2020 normals | ~10 yr | Already 1991–2020 normals; next update due 2031 |
 | `state_rpp.json` | BEA Regional Price Parities | Annual (~Dec) | All-items RPP, indexed to US=100 |
+| `state_col_components.json` | BEA SARPP (goods), Child Care Aware, KFF | Annual | Goods price index (2023), infant childcare cost (2024), marketplace health premium (2024) |
 | `county_fema_nri.json` | FEMA National Risk Index | Annual | Composite risk score per county FIPS |
 
 **Provenance.** Every value loaded from these files is written to the metric
