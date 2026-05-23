@@ -33,3 +33,12 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+# TypeScript build cache
+frontend/tsconfig.tsbuildinfo
+
+# Cached GeoJSON boundary files (fetched on first run)
+backend/app/geo_cache/
+
+# lean-ctx session data
+.lean-ctx/
