@@ -146,9 +146,9 @@ export function MapPane() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const stateGeo: any = await fetchGeoJson(STATE_GEO_URL);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        stateGeo.features.forEach((f: any) => { f.id = f.properties.STATE; });
+        stateGeo.features.forEach((f: any) => { f.properties._geoid = f.properties.STATE; });
 
-        map.addSource("states-geo", { type: "geojson", data: stateGeo });
+        map.addSource("states-geo", { type: "geojson", data: stateGeo, promoteId: "_geoid" });
 
         map.addLayer({
           id: "states-fill",
@@ -275,10 +275,10 @@ export function MapPane() {
         .then((countyGeo: any) => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           countyGeo.features.forEach((f: any) => {
-            f.id = f.properties.STATE + f.properties.COUNTY;
+            f.properties._geoid = f.properties.STATE + f.properties.COUNTY;
           });
 
-          map.addSource("counties-geo", { type: "geojson", data: countyGeo });
+          map.addSource("counties-geo", { type: "geojson", data: countyGeo, promoteId: "_geoid" });
 
           map.addLayer({
             id: "counties-fill",
