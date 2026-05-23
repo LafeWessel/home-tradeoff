@@ -143,12 +143,14 @@ function MetricRow({
   let worstGid: string | null = null;
   if (numericValues.length >= 2 && metric.unit !== "bool" && metric.unit !== "text") {
     const sorted = [...numericValues].sort((a, b) => a.v - b.v);
-    if (metric.direction === "lower_better") {
-      bestGid = sorted[0].geoid;
-      worstGid = sorted[sorted.length - 1].geoid;
-    } else if (metric.direction === "higher_better") {
-      bestGid = sorted[sorted.length - 1].geoid;
-      worstGid = sorted[0].geoid;
+    if (sorted[0].v !== sorted[sorted.length - 1].v) {
+      if (metric.direction === "lower_better") {
+        bestGid = sorted[0].geoid;
+        worstGid = sorted[sorted.length - 1].geoid;
+      } else if (metric.direction === "higher_better") {
+        bestGid = sorted[sorted.length - 1].geoid;
+        worstGid = sorted[0].geoid;
+      }
     }
   }
 
