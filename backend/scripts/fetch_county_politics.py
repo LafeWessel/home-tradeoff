@@ -106,7 +106,9 @@ def _compute_margins(raw: str, year: int) -> dict[str, float]:
     text = raw[1:] if delimiter == "\t" else raw
     reader = csv.DictReader(io.StringIO(text), delimiter=delimiter)
 
-    county: dict[str, dict[str, int]] = {}
+    # Two-pass: collect all rows, then prefer TOTAL mode to avoid double-counting
+    # subtotals (EARLY VOTING, ELECTION DAY, etc.) that are included in TOTAL.
+    rows_by_county: dict[str, list[dict]] = {}
     for row in reader:
         try:
             row_year = int(row.get("year", 0))
@@ -117,7 +119,6 @@ def _compute_margins(raw: str, year: int) -> dict[str, float]:
         office = row.get("office", "").upper()
         if office not in ("US PRESIDENT", "PRESIDENT"):
             continue
-
         fips_raw = row.get("county_fips", "")
         try:
             fips = str(int(fips_raw)).zfill(5)
@@ -125,23 +126,28 @@ def _compute_margins(raw: str, year: int) -> dict[str, float]:
             continue
         if fips.endswith("000"):  # state-total pseudo-rows
             continue
+        rows_by_county.setdefault(fips, []).append(row)
 
-        party = row.get("party", "").upper()
-        try:
-            votes = int(row.get("candidatevotes") or 0)
-        except ValueError:
-            votes = 0
-        try:
-            total = int(row.get("totalvotes") or 0)
-        except ValueError:
-            total = 0
-
+    county: dict[str, dict[str, int]] = {}
+    for fips, rows in rows_by_county.items():
+        total_rows = [r for r in rows if r.get("mode", "").upper() == "TOTAL"]
+        use = total_rows if total_rows else rows
         cc = county.setdefault(fips, {"R": 0, "D": 0, "TOTAL": 0})
-        if party == "REPUBLICAN":
-            cc["R"] += votes
-        elif party in ("DEMOCRAT", "DEMOCRATIC"):
-            cc["D"] += votes
-        cc["TOTAL"] = max(cc["TOTAL"], total)
+        for row in use:
+            party = row.get("party", "").upper()
+            try:
+                votes = int(row.get("candidatevotes") or 0)
+            except ValueError:
+                votes = 0
+            try:
+                total = int(row.get("totalvotes") or 0)
+            except ValueError:
+                total = 0
+            if party == "REPUBLICAN":
+                cc["R"] += votes
+            elif party in ("DEMOCRAT", "DEMOCRATIC"):
+                cc["D"] += votes
+            cc["TOTAL"] = max(cc["TOTAL"], total)
 
     margins: dict[str, float] = {}
     for fips, v in county.items():
