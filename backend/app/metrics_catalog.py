@@ -119,9 +119,9 @@ CATALOG: list[MetricDef] = [
         category="cost_of_living",
         unit="index (US=100)",
         direction=MetricDirection.lower_better,
-        description="BEA Regional Price Parity — overall price level relative to US avg (100).",
-        source_label="BEA RPP (curated)",
-        finest_level="state",
+        description="BEA Regional Price Parity — overall price level relative to US avg (100). Metro counties use MSA-level RPP; non-metro counties use state-level.",
+        source_label="BEA MARPP (metro) / SARPP (state)",
+        finest_level="county",
     ),
     MetricDef(
         key="col.grocery_index",

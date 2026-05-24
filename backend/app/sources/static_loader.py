@@ -115,15 +115,34 @@ def fetch_climate(_db: Session, locations: list[Location]) -> list[tuple[int, st
 
 
 def fetch_rpp(_db: Session, locations: list[Location]) -> list[tuple[int, str, float | None, str, int]]:
-    blob = _load("state_rpp.json")
-    src, yr = blob["_meta"]["source"], int(blob["_meta"]["source_year"])
-    data = blob["data"]
+    state_blob = _load("state_rpp.json")
+    state_src, state_yr = state_blob["_meta"]["source"], int(state_blob["_meta"]["source_year"])
+    state_data = state_blob["data"]
+
+    county_data: dict[str, float] = {}
+    county_src, county_yr = state_src, state_yr
+    county_path = STATIC_DIR / "county_rpp.json"
+    if county_path.exists():
+        try:
+            cb = json.loads(county_path.read_text())
+            county_data = {k: float(v) for k, v in cb.get("data", {}).items()}
+            county_src = cb["_meta"].get("source", state_src)
+            county_yr = int(cb["_meta"].get("source_year", state_yr))
+        except Exception as e:  # noqa: BLE001
+            log.warning("Failed to load county_rpp.json: %s", e)
+
     out: list[tuple[int, str, float | None, str, int]] = []
     for loc in locations:
-        abbr = loc.state_abbr
-        if not abbr or abbr not in data:
-            continue
-        out.append((loc.id, "col.rpp", float(data[abbr]), src, yr))
+        if loc.level == GeoLevel.county and loc.geoid in county_data:
+            out.append((loc.id, "col.rpp", county_data[loc.geoid], county_src, county_yr))
+        elif loc.level == GeoLevel.place and loc.state_fips and loc.county_fips:
+            county_geoid = loc.state_fips + loc.county_fips
+            if county_geoid in county_data:
+                out.append((loc.id, "col.rpp", county_data[county_geoid], county_src, county_yr))
+            elif loc.state_abbr and loc.state_abbr in state_data:
+                out.append((loc.id, "col.rpp", float(state_data[loc.state_abbr]), state_src, state_yr))
+        elif loc.state_abbr and loc.state_abbr in state_data:
+            out.append((loc.id, "col.rpp", float(state_data[loc.state_abbr]), state_src, state_yr))
     return out
 
 
