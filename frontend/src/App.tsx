@@ -11,6 +11,7 @@ import { useApp } from "./store";
 import type { MetricDef } from "./types";
 
 const PANEL_LABELS = { compare: "Compare", score: "Rank", prefs: "Preferences" } as const;
+const PANEL_WIDTH = 400; // px per open panel column
 
 export default function App() {
   const openPanels = useApp((s) => s.openPanels);
@@ -31,7 +32,7 @@ export default function App() {
       .catch((e) => setBootErr(String(e)));
   }, [setPresets]);
 
-  // Initialize (and reset after save) working preferences from the active preset.
+  // Initialize (and reset after save/preset-switch) working preferences.
   useEffect(() => {
     if (!activePresetId || metrics.length === 0 || presets.length === 0) return;
     const preset = presets.find((p) => p.id === activePresetId);
@@ -40,7 +41,7 @@ export default function App() {
     setWorkingPreferences(
       metrics.map((m) => {
         const ex = byKey.get(m.key);
-        if (ex) {
+        if (ex)
           return {
             metric_key: ex.metric_key,
             weight: ex.weight,
@@ -50,7 +51,6 @@ export default function App() {
             tolerance: ex.tolerance,
             enabled: ex.enabled,
           };
-        }
         return defaultPreferenceFor(m);
       })
     );
@@ -59,18 +59,19 @@ export default function App() {
   if (bootErr)
     return (
       <div style={{ padding: 24, color: "var(--bad)" }}>
-        Backend unreachable. Is uvicorn running on :8765? <br />
+        Backend unreachable. Is uvicorn running on :8765?
+        <br />
         <code>{bootErr}</code>
       </div>
     );
 
+  const gridCols = `1fr${openPanels.map(() => ` ${PANEL_WIDTH}px`).join("")}`;
+
   return (
-    <div className="app">
+    <div className="app" style={{ gridTemplateColumns: gridCols }}>
       <header className="app-header">
         <h1>Home Tradeoff</h1>
-        <span style={{ color: "var(--text-dim)", fontSize: 12 }}>
-          Compare US locations on the data that matters
-        </span>
+        <Search />
         <nav className="nav">
           {(["compare", "score", "prefs"] as const).map((p) => (
             <button
@@ -84,32 +85,34 @@ export default function App() {
         </nav>
       </header>
 
+      <Tray />
+
       <MapPane />
 
-      <aside className="sidebar">
-        <Search />
-        <Tray />
-        <div className="panels">
-          {openPanels.includes("compare") && (
-            <>
-              <div className="panel-title">Compare</div>
-              <Compare metrics={metrics} />
-            </>
-          )}
-          {openPanels.includes("score") && (
-            <>
-              <div className="panel-title">Rank</div>
-              <Score metrics={metrics} />
-            </>
-          )}
-          {openPanels.includes("prefs") && (
-            <>
-              <div className="panel-title">Preferences</div>
-              <Preferences metrics={metrics} />
-            </>
-          )}
-        </div>
-      </aside>
+      {openPanels.includes("compare") && (
+        <aside className="panel-col">
+          <div className="panel-col-header">Compare</div>
+          <div className="panel-col-body">
+            <Compare metrics={metrics} />
+          </div>
+        </aside>
+      )}
+      {openPanels.includes("score") && (
+        <aside className="panel-col">
+          <div className="panel-col-header">Rank</div>
+          <div className="panel-col-body">
+            <Score metrics={metrics} />
+          </div>
+        </aside>
+      )}
+      {openPanels.includes("prefs") && (
+        <aside className="panel-col">
+          <div className="panel-col-header">Preferences</div>
+          <div className="panel-col-body">
+            <Preferences metrics={metrics} />
+          </div>
+        </aside>
+      )}
     </div>
   );
 }

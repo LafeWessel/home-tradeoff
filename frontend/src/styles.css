@@ -53,16 +53,17 @@ html,
 
 .app {
   display: grid;
-  grid-template-columns: 1fr 480px;
-  grid-template-rows: 50px 1fr;
-  grid-template-areas: "header header" "map sidebar";
+  /* grid-template-columns set inline — 1fr map + Npx per panel */
+  grid-template-rows: 50px 42px 1fr;
   height: 100vh;
+  overflow: hidden;
 }
 .app-header {
-  grid-area: header;
+  grid-column: 1 / -1;
+  grid-row: 1;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   padding: 0 16px;
   background: var(--panel);
   border-bottom: 1px solid var(--border);
@@ -72,11 +73,13 @@ html,
   font-size: 16px;
   margin: 0;
   letter-spacing: 0.4px;
+  white-space: nowrap;
 }
 .app-header .nav {
   margin-left: auto;
   display: flex;
   gap: 4px;
+  flex-shrink: 0;
 }
 .app-header .nav button {
   background: transparent;
@@ -86,6 +89,7 @@ html,
   border-radius: 6px;
   cursor: pointer;
   font-size: 13px;
+  white-space: nowrap;
 }
 .app-header .nav button.active {
   color: var(--text);
@@ -94,8 +98,10 @@ html,
 }
 
 .map-pane {
-  grid-area: map;
+  grid-column: 1;
+  grid-row: 3;
   position: relative;
+  min-width: 0;
 }
 #map {
   width: 100%;
@@ -166,30 +172,20 @@ html,
   cursor: not-allowed;
 }
 
-.sidebar {
-  grid-area: sidebar;
-  background: var(--panel);
-  border-left: 1px solid var(--border);
+/* Panel columns — each open panel gets its own grid column */
+.panel-col {
+  grid-row: 3;
   display: flex;
   flex-direction: column;
+  border-left: 1px solid var(--border);
+  background: var(--panel);
+  min-width: 0;
   overflow: hidden;
 }
-
-.panels {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-}
-
-.panel-title {
-  position: sticky;
-  top: 0;
-  z-index: 2;
+.panel-col-header {
+  flex-shrink: 0;
   padding: 6px 12px;
   background: var(--panel-elev);
-  border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
   font-size: 10px;
   font-weight: 600;
@@ -197,33 +193,38 @@ html,
   letter-spacing: 0.8px;
   color: var(--text-dim);
 }
+.panel-col-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
 
-/* Search */
+/* Search — lives inline in the header */
 .search-box {
-  padding: 12px;
-  border-bottom: 1px solid var(--border);
   position: relative;
+  flex: 1;
+  max-width: 340px;
 }
 .search-box input {
   width: 100%;
-  padding: 8px 12px;
+  padding: 6px 12px;
   border-radius: 6px;
   background: var(--bg);
   color: var(--text);
   border: 1px solid var(--border);
-  font-size: 14px;
+  font-size: 13px;
 }
 .search-results {
   position: absolute;
-  top: 56px;
-  left: 12px;
-  right: 12px;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 340px;
   background: var(--panel-elev);
   border: 1px solid var(--border);
   border-radius: 6px;
   max-height: 320px;
   overflow-y: auto;
-  z-index: 10;
+  z-index: 100;
 }
 .search-results .row {
   padding: 8px 12px;
@@ -261,48 +262,74 @@ html,
   border-color: var(--good);
 }
 
-/* Selection tray */
-.tray {
-  padding: 12px;
+/* Selection tray — horizontal strip spanning all columns */
+.tray-strip {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  background: var(--panel);
   border-bottom: 1px solid var(--border);
+  overflow: hidden;
 }
-.tray h3 {
-  margin: 0 0 8px 0;
-  font-size: 12px;
+.tray-label {
+  font-size: 11px;
   color: var(--text-dim);
   text-transform: uppercase;
   letter-spacing: 0.6px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
-.tray .empty {
-  color: var(--text-dim);
-  font-size: 13px;
-  padding: 8px 0;
-}
-.tray .chips {
+.tray-chips {
   display: flex;
-  flex-wrap: wrap;
   gap: 6px;
+  overflow-x: auto;
+  flex: 1;
+  scrollbar-width: none;
 }
-.tray .chip {
+.tray-chips::-webkit-scrollbar {
+  display: none;
+}
+.tray-clear {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  padding: 0;
+}
+.tray-clear:hover {
+  color: var(--bad);
+}
+.chip {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   background: var(--accent-bg);
   border: 1px solid var(--accent);
   color: var(--text);
-  padding: 4px 8px;
+  padding: 3px 8px;
   border-radius: 999px;
-  font-size: 13px;
+  font-size: 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
-.tray .chip button {
+.chip button {
   background: transparent;
   border: none;
   color: var(--text-dim);
   cursor: pointer;
   padding: 0;
   font-size: 14px;
+  line-height: 1;
 }
-.tray .chip button:hover {
+.chip button:hover {
   color: var(--bad);
 }
 
