@@ -186,8 +186,15 @@ function MetricRow({
           <td key={loc.geoid} className={cls}>
             {formatValue(mv.value, metric)}
             {mv.level_resolved && mv.level_resolved !== loc.level && (
-              <span className="resolved-tag" title="Inherited from coarser level">
-                {mv.level_resolved}
+              <span
+                className={`resolved-tag${mv.level_resolved === "state" ? " resolved-tag--state" : ""}`}
+                title={
+                  mv.level_resolved === "state"
+                    ? "No county data — showing statewide average"
+                    : "Showing county average (no city-level data)"
+                }
+              >
+                ~{mv.level_resolved}
               </span>
             )}
             {mv.source_year && (

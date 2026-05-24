@@ -439,6 +439,11 @@ html,
   margin-left: 4px;
   vertical-align: middle;
 }
+.compare .resolved-tag--state {
+  color: var(--warn);
+  border-color: var(--warn);
+  opacity: 0.85;
+}
 .compare .missing {
   color: var(--text-dim);
   font-style: italic;
