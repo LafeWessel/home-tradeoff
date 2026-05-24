@@ -165,8 +165,8 @@ CATALOG: list[MetricDef] = [
         unit="°F",
         direction=MetricDirection.target,
         description="Mean daily minimum temperature in January (1991–2020 normals).",
-        source_label="NOAA NCEI Normals (curated)",
-        finest_level="state",
+        source_label="NOAA NClimDiv (county)",
+        finest_level="county",
     ),
     MetricDef(
         key="climate.jul_high_f",
@@ -175,8 +175,8 @@ CATALOG: list[MetricDef] = [
         unit="°F",
         direction=MetricDirection.target,
         description="Mean daily maximum temperature in July (1991–2020 normals).",
-        source_label="NOAA NCEI Normals (curated)",
-        finest_level="state",
+        source_label="NOAA NClimDiv (county)",
+        finest_level="county",
     ),
     MetricDef(
         key="climate.annual_precip_in",
@@ -185,8 +185,8 @@ CATALOG: list[MetricDef] = [
         unit="in",
         direction=MetricDirection.target,
         description="Mean annual precipitation (1991–2020 normals).",
-        source_label="NOAA NCEI Normals (curated)",
-        finest_level="state",
+        source_label="NOAA NClimDiv (county)",
+        finest_level="county",
     ),
     MetricDef(
         key="climate.annual_snowfall_in",

@@ -58,20 +58,59 @@ def fetch_taxes(_db: Session, locations: list[Location]) -> list[tuple[int, str,
 
 def fetch_climate(_db: Session, locations: list[Location]) -> list[tuple[int, str, float | None, str, int]]:
     blob = _load("state_climate.json")
-    src, yr = blob["_meta"]["source"], int(blob["_meta"]["source_year"])
-    data = blob["data"]
+    state_src, state_yr = blob["_meta"]["source"], int(blob["_meta"]["source_year"])
+    state_data = blob["data"]
+
+    # County-level normals (tmax July, tmin January, pcpn annual) from NClimDiv
+    county_climate: dict[str, dict[str, float]] = {}
+    county_src, county_yr = state_src, state_yr
+    county_path = STATIC_DIR / "county_climate.json"
+    if county_path.exists():
+        try:
+            cb = json.loads(county_path.read_text())
+            county_climate = cb.get("data", {})
+            county_src = cb["_meta"].get("source", state_src)
+            county_yr = int(cb["_meta"].get("source_year", state_yr))
+        except Exception as e:  # noqa: BLE001
+            log.warning("Failed to load county_climate.json: %s", e)
+
+    # Fields available at county level
+    COUNTY_FIELDS: dict[str, str] = {
+        "jan_low_f": "climate.jan_low_f",
+        "jul_high_f": "climate.jul_high_f",
+        "annual_precip_in": "climate.annual_precip_in",
+    }
+    # Fields available at state level only
+    STATE_ONLY_FIELDS: dict[str, str] = {
+        "annual_snowfall_in": "climate.annual_snowfall_in",
+        "annual_sunny_days": "climate.annual_sunny_days",
+        "avg_wind_speed_mph": "climate.avg_wind_speed_mph",
+    }
+
     out: list[tuple[int, str, float | None, str, int]] = []
     for loc in locations:
         abbr = loc.state_abbr
-        if not abbr or abbr not in data:
+        if not abbr or abbr not in state_data:
             continue
-        d = data[abbr]
-        out.append((loc.id, "climate.jan_low_f", float(d["jan_low_f"]), src, yr))
-        out.append((loc.id, "climate.jul_high_f", float(d["jul_high_f"]), src, yr))
-        out.append((loc.id, "climate.annual_precip_in", float(d["annual_precip_in"]), src, yr))
-        out.append((loc.id, "climate.annual_snowfall_in", float(d["annual_snowfall_in"]), src, yr))
-        out.append((loc.id, "climate.annual_sunny_days", float(d["annual_sunny_days"]), src, yr))
-        out.append((loc.id, "climate.avg_wind_speed_mph", float(d["avg_wind_speed_mph"]), src, yr))
+        sd = state_data[abbr]
+
+        # County-enhanced metrics: 3-tier county→place-parent-county→state
+        for field, metric_key in COUNTY_FIELDS.items():
+            county_row: dict[str, float] | None = None
+            if loc.level == GeoLevel.county and loc.geoid in county_climate:
+                county_row = county_climate[loc.geoid]
+            elif loc.level == GeoLevel.place and loc.state_fips and loc.county_fips:
+                county_row = county_climate.get(loc.state_fips + loc.county_fips)
+
+            if county_row is not None and field in county_row:
+                out.append((loc.id, metric_key, float(county_row[field]), county_src, county_yr))
+            else:
+                out.append((loc.id, metric_key, float(sd[field]), state_src, state_yr))
+
+        # State-only metrics
+        for field, metric_key in STATE_ONLY_FIELDS.items():
+            out.append((loc.id, metric_key, float(sd[field]), state_src, state_yr))
+
     return out
 
 
