@@ -276,15 +276,56 @@ def fetch_heat_index(_db: Session, locations: list[Location]):
     return _state_keyed_simple("state_heat_index.json", "climate.summer_heat_index_f", locations)
 
 
+def _fetch_county_scalar(
+    state_file: str,
+    state_field: str,
+    county_file: str,
+    metric_key: str,
+    locations: list[Location],
+) -> list[tuple[int, str, float | None, str, int]]:
+    """3-tier county→place-parent-county→state loader for a single scalar metric."""
+    blob = _load(state_file)
+    src, yr = blob["_meta"]["source"], int(blob["_meta"]["source_year"])
+    state_data: dict[str, dict] = blob["data"]
+
+    county_data: dict[str, float] = {}
+    county_path = STATIC_DIR / county_file
+    if county_path.exists():
+        try:
+            cb = json.loads(county_path.read_text())
+            county_data = {k: float(v) for k, v in cb.get("data", {}).items()}
+            src = cb["_meta"].get("source", src)
+            yr = int(cb["_meta"].get("source_year", yr))
+        except Exception as e:  # noqa: BLE001
+            log.warning("Failed to load %s: %s", county_file, e)
+
+    out: list[tuple[int, str, float | None, str, int]] = []
+    for loc in locations:
+        if loc.level == GeoLevel.county and loc.geoid in county_data:
+            out.append((loc.id, metric_key, county_data[loc.geoid], src, yr))
+        elif loc.level == GeoLevel.place and loc.state_fips and loc.county_fips:
+            county_geoid = loc.state_fips + loc.county_fips
+            if county_geoid in county_data:
+                out.append((loc.id, metric_key, county_data[county_geoid], src, yr))
+            elif loc.state_abbr and loc.state_abbr in state_data:
+                out.append((loc.id, metric_key, float(state_data[loc.state_abbr][state_field]), src, yr))
+        elif loc.state_abbr and loc.state_abbr in state_data:
+            out.append((loc.id, metric_key, float(state_data[loc.state_abbr][state_field]), src, yr))
+    return out
+
+
 def fetch_utilities(_db: Session, locations: list[Location]):
-    return _state_keyed_multi(
-        "state_utilities.json",
-        {
-            "electricity_cents_kwh": "utility.electricity_rate",
-            "broadband_100_20_pct": "infra.broadband_100_20_pct",
-        },
+    electricity = _fetch_county_scalar(
+        "state_utilities.json", "electricity_cents_kwh",
+        "county_electricity.json", "utility.electricity_rate",
         locations,
     )
+    broadband = _fetch_county_scalar(
+        "state_utilities.json", "broadband_100_20_pct",
+        "county_broadband.json", "infra.broadband_100_20_pct",
+        locations,
+    )
+    return electricity + broadband
 
 
 def fetch_education(_db: Session, locations: list[Location]):
