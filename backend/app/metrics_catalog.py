@@ -194,9 +194,9 @@ CATALOG: list[MetricDef] = [
         category="climate",
         unit="in",
         direction=MetricDirection.target,
-        description="Mean annual snowfall (1991–2020 normals). State-wide average.",
-        source_label="NOAA NCEI Normals (curated)",
-        finest_level="state",
+        description="Mean annual snowfall (1991–2020 normals). County-level from GHCN station normals.",
+        source_label="NOAA NCEI Normals (county)",
+        finest_level="county",
     ),
     MetricDef(
         key="climate.annual_sunny_days",
