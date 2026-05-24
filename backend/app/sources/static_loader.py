@@ -217,7 +217,34 @@ def fetch_nri_components(_db: Session, locations: list[Location]):
 
 
 def fetch_pm25(_db: Session, locations: list[Location]):
-    return _state_keyed_simple("state_pm25.json", "env.pm25_annual", locations)
+    blob = _load("state_pm25.json")
+    src, yr = blob["_meta"]["source"], int(blob["_meta"]["source_year"])
+    state_data = blob["data"]
+
+    county_data: dict[str, float] = {}
+    county_path = STATIC_DIR / "county_pm25.json"
+    if county_path.exists():
+        try:
+            cb = json.loads(county_path.read_text())
+            county_data = {k: float(v) for k, v in cb.get("data", {}).items()}
+            src = cb["_meta"].get("source", src)
+            yr = int(cb["_meta"].get("source_year", yr))
+        except Exception as e:  # noqa: BLE001
+            log.warning("Failed to load county_pm25.json: %s", e)
+
+    out: list[tuple[int, str, float | None, str, int]] = []
+    for loc in locations:
+        if loc.level == GeoLevel.county and loc.geoid in county_data:
+            out.append((loc.id, "env.pm25_annual", county_data[loc.geoid], src, yr))
+        elif loc.level == GeoLevel.place and loc.state_fips and loc.county_fips:
+            county_geoid = loc.state_fips + loc.county_fips
+            if county_geoid in county_data:
+                out.append((loc.id, "env.pm25_annual", county_data[county_geoid], src, yr))
+            elif loc.state_abbr and loc.state_abbr in state_data:
+                out.append((loc.id, "env.pm25_annual", float(state_data[loc.state_abbr]), src, yr))
+        elif loc.state_abbr and loc.state_abbr in state_data:
+            out.append((loc.id, "env.pm25_annual", float(state_data[loc.state_abbr]), src, yr))
+    return out
 
 
 def fetch_heat_index(_db: Session, locations: list[Location]):
@@ -266,14 +293,55 @@ def fetch_health(_db: Session, locations: list[Location]):
 
 
 def fetch_growth(_db: Session, locations: list[Location]):
-    return _state_keyed_multi(
-        "state_growth.json",
-        {
-            "pop_growth_5yr_pct": "pop.growth_5yr_pct",
-            "job_growth_5yr_pct": "employment.job_growth_5yr_pct",
-        },
-        locations,
-    )
+    blob = _load("state_growth.json")
+    src, yr = blob["_meta"]["source"], int(blob["_meta"]["source_year"])
+    state_data = blob["data"]
+
+    county_data: dict[str, dict[str, float]] = {}
+    county_path = STATIC_DIR / "county_growth.json"
+    if county_path.exists():
+        try:
+            cb = json.loads(county_path.read_text())
+            county_data = {k: v for k, v in cb.get("data", {}).items() if isinstance(v, dict)}
+            src = cb["_meta"].get("source", src)
+            yr = int(cb["_meta"].get("source_year", yr))
+        except Exception as e:  # noqa: BLE001
+            log.warning("Failed to load county_growth.json: %s", e)
+
+    fields = {
+        "pop_growth_5yr_pct": "pop.growth_5yr_pct",
+        "job_growth_5yr_pct": "employment.job_growth_5yr_pct",
+    }
+
+    out: list[tuple[int, str, float | None, str, int]] = []
+    for loc in locations:
+        if loc.level == GeoLevel.county and loc.geoid in county_data:
+            d = county_data[loc.geoid]
+            for field, metric_key in fields.items():
+                v = d.get(field)
+                if v is not None:
+                    out.append((loc.id, metric_key, float(v), src, yr))
+        elif loc.level == GeoLevel.place and loc.state_fips and loc.county_fips:
+            county_geoid = loc.state_fips + loc.county_fips
+            if county_geoid in county_data:
+                d = county_data[county_geoid]
+                for field, metric_key in fields.items():
+                    v = d.get(field)
+                    if v is not None:
+                        out.append((loc.id, metric_key, float(v), src, yr))
+            elif loc.state_abbr and loc.state_abbr in state_data:
+                d = state_data[loc.state_abbr]
+                for field, metric_key in fields.items():
+                    v = d.get(field)
+                    if v is not None:
+                        out.append((loc.id, metric_key, float(v), src, yr))
+        elif loc.state_abbr and loc.state_abbr in state_data:
+            d = state_data[loc.state_abbr]
+            for field, metric_key in fields.items():
+                v = d.get(field)
+                if v is not None:
+                    out.append((loc.id, metric_key, float(v), src, yr))
+    return out
 
 
 def fetch_politics(_db: Session, locations: list[Location]):

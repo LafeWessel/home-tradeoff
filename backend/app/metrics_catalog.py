@@ -399,10 +399,10 @@ CATALOG: list[MetricDef] = [
         category="climate",
         unit="µg/m³",
         direction=MetricDirection.lower_better,
-        description="Population-weighted annual mean fine-particulate concentration. "
-        "WHO guideline 5 µg/m³, US NAAQS 9 µg/m³.",
-        source_label="EPA AQS (curated)",
-        finest_level="state",
+        description="Annual mean fine-particulate concentration averaged across monitors. "
+        "WHO guideline 5 µg/m³, US NAAQS 9 µg/m³. Counties with no monitor use state value.",
+        source_label="EPA AQS",
+        finest_level="county",
     ),
     MetricDef(
         key="climate.summer_heat_index_f",
@@ -513,9 +513,9 @@ CATALOG: list[MetricDef] = [
         category="demographics",
         unit="%",
         direction=MetricDirection.target,
-        description="Cumulative population change 2018–2023 (Census Population Estimates).",
-        source_label="Census Pop Estimates (curated)",
-        finest_level="state",
+        description="Cumulative population change 2019–2024 (Census Population Estimates).",
+        source_label="Census PEP / BLS QCEW",
+        finest_level="county",
     ),
     MetricDef(
         key="employment.job_growth_5yr_pct",
@@ -523,9 +523,9 @@ CATALOG: list[MetricDef] = [
         category="employment",
         unit="%",
         direction=MetricDirection.higher_better,
-        description="Cumulative nonfarm-payroll change 2018–2023 (BLS QCEW).",
-        source_label="BLS QCEW (curated)",
-        finest_level="state",
+        description="Cumulative employment change 2019–2024 (BLS QCEW annual avg).",
+        source_label="Census PEP / BLS QCEW",
+        finest_level="county",
     ),
     MetricDef(
         key="politics.partisan_lean_2024",
