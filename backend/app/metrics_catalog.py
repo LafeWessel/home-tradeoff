@@ -456,6 +456,38 @@ CATALOG: list[MetricDef] = [
         finest_level="state",
     ),
     MetricDef(
+        key="edu.homeschool_regulation_level",
+        label="Homeschool regulation level",
+        category="demographics",
+        unit="1–5",
+        direction=MetricDirection.lower_better,
+        description=(
+            "How heavily state law regulates home education: "
+            "1=no notice required (most permissive), "
+            "2=notice only, "
+            "3=notice + required subjects or assessments, "
+            "4=notice + subjects + testing + teacher qualifications, "
+            "5=prior approval required (most restrictive)."
+        ),
+        source_label="HSLDA State Law Summary (curated)",
+        finest_level="state",
+    ),
+    MetricDef(
+        key="edu.school_voucher_program",
+        label="School voucher / ESA program",
+        category="demographics",
+        unit="0–2",
+        direction=MetricDirection.higher_better,
+        description=(
+            "Availability of publicly funded school-choice programs: "
+            "0=no meaningful program, "
+            "1=limited or means-tested voucher, ESA, or tax-credit scholarship, "
+            "2=broad or universal ESA/voucher available to most families."
+        ),
+        source_label="EdChoice Yearbook 2024 (curated)",
+        finest_level="state",
+    ),
+    MetricDef(
         key="health.primary_care_per_100k",
         label="Primary-care physicians",
         category="health",

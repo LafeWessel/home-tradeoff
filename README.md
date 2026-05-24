@@ -210,6 +210,9 @@ Design intent (see `CLAUDE.md`):
 - **Employment** — annual-average unemployment rate
 - **Demographics** — population, median age, median household income,
   bachelor's-or-higher %
+- **Education policy** — homeschool regulation level (1=no notice required →
+  5=prior approval required) and school voucher/ESA program availability
+  (0=none, 1=limited, 2=universal); sourced from HSLDA and EdChoice 2024
 
 Each metric is tagged with a `direction` (`lower_better`, `higher_better`,
 `target`) which determines how preference scoring normalizes it. Direction

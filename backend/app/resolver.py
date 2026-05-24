@@ -162,6 +162,7 @@ def ensure_metric_values(
     _upsert(db, static_loader.fetch_heat_index(db, working))
     _upsert(db, static_loader.fetch_utilities(db, working))
     _upsert(db, static_loader.fetch_education(db, working))
+    _upsert(db, static_loader.fetch_homeschool_voucher(db, working))
     _upsert(db, static_loader.fetch_health(db, working))
     _upsert(db, static_loader.fetch_growth(db, working))
     _upsert(db, static_loader.fetch_politics(db, working))

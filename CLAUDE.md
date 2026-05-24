@@ -18,6 +18,7 @@ Every location should expose data across these dimensions:
 - **Crime**: violent crime rate, property crime rate — sourced at city/county level, not just state
 - **Employment**: major employers, unemployment rate, industry mix
 - **Demographics & quality of life**: population size/growth, school ratings, healthcare access, walkability
+- **Education policy**: homeschooling regulation level (state law permissiveness 1–5), school voucher/ESA program availability (0=none, 1=limited, 2=universal) vs. traditional public-school-only states
 
 ## Architecture Intent
 

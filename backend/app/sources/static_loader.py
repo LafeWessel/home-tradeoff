@@ -239,6 +239,21 @@ def fetch_education(_db: Session, locations: list[Location]):
     return _state_keyed_simple("state_education.json", "edu.k12_proficiency_pct", locations)
 
 
+def fetch_homeschool_voucher(_db: Session, locations: list[Location]) -> list[tuple[int, str, float | None, str, int]]:
+    blob = _load("state_homeschool_voucher.json")
+    src, yr = blob["_meta"]["source"], int(blob["_meta"]["source_year"])
+    data = blob["data"]
+    out: list[tuple[int, str, float | None, str, int]] = []
+    for loc in locations:
+        abbr = loc.state_abbr
+        if not abbr or abbr not in data:
+            continue
+        d = data[abbr]
+        out.append((loc.id, "edu.homeschool_regulation_level", float(d["homeschool_regulation"]), src, yr))
+        out.append((loc.id, "edu.school_voucher_program", float(d["school_voucher_program"]), src, yr))
+    return out
+
+
 def fetch_health(_db: Session, locations: list[Location]):
     return _state_keyed_multi(
         "state_health.json",
