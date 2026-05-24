@@ -92,6 +92,10 @@ export function Score({ metrics }: { metrics: MetricDef[] }) {
     ...pendingLocs.map((l) => ({ geoid: l.geoid, display_name: l.display_name, pending: true })),
   ];
 
+  const totalWeight = ranked.length > 0
+    ? ranked[0].metrics.reduce((s, m) => s + m.weight, 0)
+    : 0;
+
   return (
     <div className="compare">
       <div style={{ marginBottom: 12, color: "var(--text-dim)", fontSize: 12, display: "flex", alignItems: "center", gap: 8 }}>
@@ -154,7 +158,7 @@ export function Score({ metrics }: { metrics: MetricDef[] }) {
           <table>
             <thead>
               <tr>
-                <th style={{ width: "40%" }}>Metric (weight)</th>
+                <th style={{ width: "40%" }}>Metric</th>
                 {breakdownCols.map((c) => (
                   <th key={c.geoid}>{c.display_name}</th>
                 ))}
@@ -170,6 +174,7 @@ export function Score({ metrics }: { metrics: MetricDef[] }) {
                   dataByGeoid={dataByGeoid}
                   breakdownCols={breakdownCols}
                   mdef={mdef}
+                  totalWeight={totalWeight}
                 />
               ))}
             </tbody>
@@ -187,6 +192,7 @@ function CategoryBreakdown({
   dataByGeoid,
   breakdownCols,
   mdef,
+  totalWeight,
 }: {
   category: string;
   metrics: MetricDef[];
@@ -194,6 +200,7 @@ function CategoryBreakdown({
   dataByGeoid: Map<string, ScoredLoc>;
   breakdownCols: Array<{ geoid: string; display_name: string; pending: boolean }>;
   mdef: Record<string, MetricDef>;
+  totalWeight: number;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const items = metrics.filter((m) => m.category === category);
@@ -202,6 +209,8 @@ function CategoryBreakdown({
   const firstLoaded = ranked[0];
 
   const itemKeys = new Set(items.map((m) => m.key));
+
+  // Weighted-average score per location for this category
   const catScores = new Map<string, number | null>();
   for (const col of breakdownCols) {
     if (col.pending) { catScores.set(col.geoid, null); continue; }
@@ -209,9 +218,27 @@ function CategoryBreakdown({
     if (!r) { catScores.set(col.geoid, null); continue; }
     const catMetrics = r.metrics.filter((sm) => itemKeys.has(sm.metric_key) && sm.score != null);
     if (catMetrics.length === 0) { catScores.set(col.geoid, null); continue; }
-    const totalWeight = catMetrics.reduce((s, sm) => s + sm.weight, 0);
+    const catWeightTotal = catMetrics.reduce((s, sm) => s + sm.weight, 0);
     const weightedSum = catMetrics.reduce((s, sm) => s + sm.score! * sm.weight, 0);
-    catScores.set(col.geoid, totalWeight > 0 ? weightedSum / totalWeight : null);
+    catScores.set(col.geoid, catWeightTotal > 0 ? weightedSum / catWeightTotal : null);
+  }
+
+  // Max possible pts this category contributes (sum of metric weights / totalWeight)
+  const catMetricWeights = firstLoaded?.metrics.filter((m) => itemKeys.has(m.metric_key)) ?? [];
+  const catMaxPts = totalWeight > 0
+    ? catMetricWeights.reduce((s, m) => s + m.weight, 0) / totalWeight * 100
+    : 0;
+
+  // Earned pts per location for this category
+  const catEarnedPts = new Map<string, number | null>();
+  for (const col of breakdownCols) {
+    if (col.pending || totalWeight === 0) { catEarnedPts.set(col.geoid, null); continue; }
+    const r = dataByGeoid.get(col.geoid);
+    if (!r) { catEarnedPts.set(col.geoid, null); continue; }
+    const pts = r.metrics
+      .filter((m) => itemKeys.has(m.metric_key) && m.score != null)
+      .reduce((s, m) => s + m.score! * m.weight / totalWeight, 0);
+    catEarnedPts.set(col.geoid, pts);
   }
 
   return (
@@ -220,9 +247,13 @@ function CategoryBreakdown({
         <td>
           <span className="cat-chevron">{collapsed ? "▶" : "▼"}</span>
           {categoryLabel(category)}
+          <span style={{ color: "var(--text-dim)", fontWeight: 400, fontSize: 11, marginLeft: 4 }}>
+            ({catMaxPts.toFixed(1)} pts)
+          </span>
         </td>
         {breakdownCols.map((col) => {
           const score = catScores.get(col.geoid);
+          const earned = catEarnedPts.get(col.geoid);
           return (
             <td key={col.geoid} style={{ textAlign: "center" }}>
               {col.pending ? (
@@ -230,6 +261,9 @@ function CategoryBreakdown({
               ) : score != null ? (
                 <span style={{ color: scoreColor(score), fontVariantNumeric: "tabular-nums" }}>
                   {formatScore(score)}
+                  <span style={{ color: "var(--text-dim)", fontWeight: 400, fontSize: 11, marginLeft: 4 }}>
+                    ({earned != null ? earned.toFixed(1) : "—"})
+                  </span>
                 </span>
               ) : (
                 <span style={{ color: "var(--text-dim)" }}>—</span>
@@ -241,12 +275,13 @@ function CategoryBreakdown({
       {!collapsed && items.map((m) => {
         const anyWeight =
           firstLoaded?.metrics.find((x) => x.metric_key === m.key)?.weight ?? 0;
+        const metricMaxPts = totalWeight > 0 ? anyWeight / totalWeight * 100 : 0;
         return (
           <tr key={m.key}>
             <td>
               <div className="metric-label">
                 {m.label}{" "}
-                <span style={{ color: "var(--text-dim)" }}>(w {anyWeight.toFixed(0)})</span>
+                <span style={{ color: "var(--text-dim)" }}>({metricMaxPts.toFixed(1)} pts)</span>
               </div>
             </td>
             {breakdownCols.map((col) => {
@@ -266,10 +301,14 @@ function CategoryBreakdown({
                   </td>
                 );
               }
+              const earnedPts = totalWeight > 0 ? sm.score * sm.weight / totalWeight : null;
               return (
                 <td key={col.geoid}>
                   <div className="score-cell" style={{ color: scoreColor(sm.score) }}>
                     {formatScore(sm.score)}
+                    <span style={{ color: "var(--text-dim)", fontWeight: 400, fontSize: 11 }}>
+                      ({earnedPts != null ? earnedPts.toFixed(1) : "—"})
+                    </span>
                     <span
                       className="score-bar"
                       style={{
