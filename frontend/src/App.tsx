@@ -69,7 +69,11 @@ export default function App() {
     );
 
   const dataWidth = Math.max(PANEL_WIDTH, DATA_LABEL_WIDTH + Math.max(1, selected.length) * DATA_LOC_WIDTH);
-  const gridCols = `1fr${openPanels.map((p) => ` ${p === "compare" || p === "score" ? dataWidth : PANEL_WIDTH}px`).join("")}`;
+  const PANEL_ORDER = ["compare", "score", "prefs"] as const;
+  const gridCols = `1fr${PANEL_ORDER
+    .filter((p) => openPanels.includes(p))
+    .map((p) => ` ${p === "compare" || p === "score" ? dataWidth : PANEL_WIDTH}px`)
+    .join("")}`;
 
   return (
     <div className="app" style={{ gridTemplateColumns: gridCols }}>
