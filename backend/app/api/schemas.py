@@ -94,6 +94,11 @@ class ScoreRequest(BaseModel):
     geoids: list[str] = Field(..., min_length=1, max_length=20)
 
 
+class ScorePreviewRequest(BaseModel):
+    geoids: list[str] = Field(..., min_length=1, max_length=20)
+    preferences: list[PreferenceIn]
+
+
 class ScoredMetricOut(BaseModel):
     metric_key: str
     raw_value: float | None
@@ -114,4 +119,8 @@ class ScoredLocationOut(BaseModel):
 
 class ScoreResponse(BaseModel):
     preset: PresetOut
+    locations: list[ScoredLocationOut]
+
+
+class ScorePreviewResponse(BaseModel):
     locations: list[ScoredLocationOut]

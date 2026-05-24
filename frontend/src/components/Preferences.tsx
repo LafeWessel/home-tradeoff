@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../api/client";
 import { defaultPreferenceFor } from "../defaults";
-import { categoryLabel, sortedCategories } from "../format";
+import { categoryLabel, formatScore, scoreColor, sortedCategories } from "../format";
 import { useApp } from "../store";
-import type { MetricDef, Preference, Preset } from "../types";
+import type { MetricDef, Preference, Preset, ScorePreviewResponse } from "../types";
 
 interface Props {
   metrics: MetricDef[];
@@ -14,12 +14,16 @@ export function Preferences({ metrics }: Props) {
   const setPresets = useApp((s) => s.setPresets);
   const activePresetId = useApp((s) => s.activePresetId);
   const setActivePresetId = useApp((s) => s.setActivePresetId);
+  const selected = useApp((s) => s.selected);
 
   const [working, setWorking] = useState<Preference[]>([]);
   const [dirty, setDirty] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [newPresetName, setNewPresetName] = useState("");
+  const [liveScores, setLiveScores] = useState<ScorePreviewResponse | null>(null);
+  const [scoring, setScoring] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const active = useMemo(
     () => presets.find((p) => p.id === activePresetId) ?? null,
@@ -52,6 +56,32 @@ export function Preferences({ metrics }: Props) {
     setWorking(merged);
     setDirty(false);
   }, [active, metrics]);
+
+  // Live scoring: re-score whenever working prefs or selected locations change
+  useEffect(() => {
+    if (selected.length === 0 || working.length === 0) {
+      setLiveScores(null);
+      return;
+    }
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    setScoring(true);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const res = await api.scorePreview(
+          selected.map((l) => l.geoid),
+          working
+        );
+        setLiveScores(res);
+      } catch {
+        // silently ignore preview errors — stale scores are fine
+      } finally {
+        setScoring(false);
+      }
+    }, 350);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [working, selected]);
 
   const updateRow = (metric_key: string, patch: Partial<Preference>) => {
     setWorking((rows) =>
@@ -160,6 +190,35 @@ export function Preferences({ metrics }: Props) {
                 : ""}
             </span>
           </div>
+
+          {selected.length > 0 && (
+            <div className="live-rank">
+              <div className="live-rank-header">
+                Live rankings
+                {scoring && <span className="spinner" style={{ marginLeft: 6 }} />}
+              </div>
+              {liveScores
+                ? [...liveScores.locations]
+                    .sort((a, b) => (b.overall_score ?? -Infinity) - (a.overall_score ?? -Infinity))
+                    .map((loc, i) => (
+                      <div key={loc.location.geoid} className="live-rank-row">
+                        <span className="live-rank-pos">{i + 1}</span>
+                        <span className="live-rank-name">{loc.location.display_name}</span>
+                        <span
+                          className="live-rank-score"
+                          style={{ color: scoreColor(loc.overall_score) }}
+                        >
+                          {formatScore(loc.overall_score)}
+                        </span>
+                      </div>
+                    ))
+                : !scoring && (
+                    <div style={{ color: "var(--text-dim)", fontSize: 12 }}>
+                      Adjust preferences to see live rankings.
+                    </div>
+                  )}
+            </div>
+          )}
 
           {cats.map((cat) => (
             <div className="cat-section" key={cat}>

@@ -574,6 +574,52 @@ html,
   text-align: right;
 }
 
+.live-rank {
+  background: var(--panel-elev);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 16px;
+}
+.live-rank-header {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+}
+.live-rank-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.live-rank-row:last-child {
+  border-bottom: none;
+}
+.live-rank-pos {
+  font-weight: 700;
+  color: var(--text-dim);
+  min-width: 16px;
+  font-variant-numeric: tabular-nums;
+}
+.live-rank-name {
+  flex: 1;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.live-rank-score {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-size: 14px;
+}
+
 .cat-section {
   margin-bottom: 16px;
 }

@@ -86,3 +86,7 @@ export interface ScoreResponse {
   preset: Preset;
   locations: ScoredLocation[];
 }
+
+export interface ScorePreviewResponse {
+  locations: ScoredLocation[];
+}

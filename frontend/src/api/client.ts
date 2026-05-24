@@ -4,6 +4,7 @@ import type {
   MetricDef,
   Preference,
   Preset,
+  ScorePreviewResponse,
   ScoreResponse,
 } from "../types";
 
@@ -61,4 +62,10 @@ export const api = {
 
   score: (presetId: number, geoids: string[]) =>
     request<ScoreResponse>("POST", "/api/score", { preset_id: presetId, geoids }),
+
+  scorePreview: (geoids: string[], preferences: Preference[]) =>
+    request<ScorePreviewResponse>("POST", "/api/score/preview", {
+      geoids,
+      preferences: preferences.map(({ id: _omit, ...rest }) => rest),
+    }),
 };
