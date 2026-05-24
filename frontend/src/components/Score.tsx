@@ -195,17 +195,50 @@ function CategoryBreakdown({
   breakdownCols: Array<{ geoid: string; display_name: string; pending: boolean }>;
   mdef: Record<string, MetricDef>;
 }) {
+  const [collapsed, setCollapsed] = useState(false);
   const items = metrics.filter((m) => m.category === category);
   if (items.length === 0) return null;
 
   const firstLoaded = ranked[0];
 
+  const itemKeys = new Set(items.map((m) => m.key));
+  const catScores = new Map<string, number | null>();
+  for (const col of breakdownCols) {
+    if (col.pending) { catScores.set(col.geoid, null); continue; }
+    const r = dataByGeoid.get(col.geoid);
+    if (!r) { catScores.set(col.geoid, null); continue; }
+    const catMetrics = r.metrics.filter((sm) => itemKeys.has(sm.metric_key) && sm.score != null);
+    if (catMetrics.length === 0) { catScores.set(col.geoid, null); continue; }
+    const totalWeight = catMetrics.reduce((s, sm) => s + sm.weight, 0);
+    const weightedSum = catMetrics.reduce((s, sm) => s + sm.score! * sm.weight, 0);
+    catScores.set(col.geoid, totalWeight > 0 ? weightedSum / totalWeight : null);
+  }
+
   return (
     <>
-      <tr className="cat-header">
-        <td colSpan={breakdownCols.length + 1}>{categoryLabel(category)}</td>
+      <tr className="cat-header" onClick={() => setCollapsed((c) => !c)}>
+        <td>
+          <span className="cat-chevron">{collapsed ? "▶" : "▼"}</span>
+          {categoryLabel(category)}
+        </td>
+        {breakdownCols.map((col) => {
+          const score = catScores.get(col.geoid);
+          return (
+            <td key={col.geoid} style={{ textAlign: "center" }}>
+              {col.pending ? (
+                <span className="spinner" />
+              ) : score != null ? (
+                <span style={{ color: scoreColor(score), fontVariantNumeric: "tabular-nums" }}>
+                  {formatScore(score)}
+                </span>
+              ) : (
+                <span style={{ color: "var(--text-dim)" }}>—</span>
+              )}
+            </td>
+          );
+        })}
       </tr>
-      {items.map((m) => {
+      {!collapsed && items.map((m) => {
         const anyWeight =
           firstLoaded?.metrics.find((x) => x.metric_key === m.key)?.weight ?? 0;
         return (
