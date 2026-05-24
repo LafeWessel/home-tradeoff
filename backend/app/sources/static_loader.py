@@ -170,9 +170,34 @@ def fetch_taxes_extra(_db: Session, locations: list[Location]):
 
 
 def fetch_housing_appreciation(_db: Session, locations: list[Location]):
-    return _state_keyed_simple(
-        "state_housing_appreciation.json", "housing.appreciation_10yr_cagr", locations
-    )
+    blob = _load("state_housing_appreciation.json")
+    src, yr = blob["_meta"]["source"], int(blob["_meta"]["source_year"])
+    state_data = blob["data"]
+
+    county_data: dict[str, float] = {}
+    county_path = STATIC_DIR / "county_housing_appreciation.json"
+    if county_path.exists():
+        try:
+            cb = json.loads(county_path.read_text())
+            county_data = {k: float(v) for k, v in cb.get("data", {}).items()}
+            src = cb["_meta"].get("source", src)
+            yr = int(cb["_meta"].get("source_year", yr))
+        except Exception as e:  # noqa: BLE001
+            log.warning("Failed to load county_housing_appreciation.json: %s", e)
+
+    out: list[tuple[int, str, float | None, str, int]] = []
+    for loc in locations:
+        if loc.level == GeoLevel.county and loc.geoid in county_data:
+            out.append((loc.id, "housing.appreciation_10yr_cagr", county_data[loc.geoid], src, yr))
+        elif loc.level == GeoLevel.place and loc.state_fips and loc.county_fips:
+            county_geoid = loc.state_fips + loc.county_fips
+            if county_geoid in county_data:
+                out.append((loc.id, "housing.appreciation_10yr_cagr", county_data[county_geoid], src, yr))
+            elif loc.state_abbr and loc.state_abbr in state_data:
+                out.append((loc.id, "housing.appreciation_10yr_cagr", float(state_data[loc.state_abbr]), src, yr))
+        elif loc.state_abbr and loc.state_abbr in state_data:
+            out.append((loc.id, "housing.appreciation_10yr_cagr", float(state_data[loc.state_abbr]), src, yr))
+    return out
 
 
 def fetch_nri_components(_db: Session, locations: list[Location]):

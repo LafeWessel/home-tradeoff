@@ -350,8 +350,8 @@ CATALOG: list[MetricDef] = [
         unit="%",
         direction=MetricDirection.target,
         description="10-year compound annual growth rate of home prices (FHFA HPI, all-transactions).",
-        source_label="FHFA HPI (curated)",
-        finest_level="state",
+        source_label="FHFA HPI (county)",
+        finest_level="county",
     ),
     MetricDef(
         key="hazard.hurricane",
