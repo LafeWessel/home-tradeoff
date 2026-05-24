@@ -534,8 +534,8 @@ CATALOG: list[MetricDef] = [
         unit="ppts",
         direction=MetricDirection.target,
         description="2024 presidential margin in percentage points; positive = Republican, negative = Democratic.",
-        source_label="MIT Election Lab (curated)",
-        finest_level="state",
+        source_label="MIT Election Lab",
+        finest_level="county",
     ),
     MetricDef(
         key="demo.race.white_pct",

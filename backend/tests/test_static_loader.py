@@ -20,6 +20,30 @@ def _state(abbr: str, lid: int = 1) -> Location:
     return loc
 
 
+def _county(state_abbr: str, county_fips: str, lid: int = 10) -> Location:
+    state_fips = _FIPS[state_abbr]
+    geoid = state_fips + county_fips
+    loc = Location(
+        geoid=geoid, level=GeoLevel.county, name="Test County",
+        state_fips=state_fips, state_abbr=state_abbr, county_fips=county_fips,
+        parent_geoid=state_fips,
+    )
+    loc.id = lid
+    return loc
+
+
+def _place(state_abbr: str, county_fips: str, place_fips: str, lid: int = 20) -> Location:
+    state_fips = _FIPS[state_abbr]
+    geoid = state_fips + place_fips
+    loc = Location(
+        geoid=geoid, level=GeoLevel.place, name="Test City",
+        state_fips=state_fips, state_abbr=state_abbr, county_fips=county_fips,
+        place_fips=place_fips, parent_geoid=state_fips,
+    )
+    loc.id = lid
+    return loc
+
+
 def test_taxes_emits_state_metrics():
     out = static_loader.fetch_taxes(None, [_state("CA", 1)])  # type: ignore[arg-type]
     keys = {row[1] for row in out}
@@ -150,6 +174,24 @@ def test_politics_signed_margin():
     cal_v = next(row[2] for row in cal if row[1] == "politics.partisan_lean_2024")
     wy_v = next(row[2] for row in wy if row[1] == "politics.partisan_lean_2024")
     assert cal_v < 0 and wy_v > 0
+
+
+def test_politics_county_gets_value():
+    # County and place locations should always get a value (county-specific if the county
+    # file has been generated, state fallback otherwise).
+    tx_county = _county("TX", "453", lid=11)   # Travis County (48453)
+    out = static_loader.fetch_politics(None, [tx_county])  # type: ignore[arg-type]
+    v = next((r[2] for r in out if r[1] == "politics.partisan_lean_2024"), None)
+    assert v is not None
+
+
+def test_politics_place_uses_parent_county_or_state():
+    # Place looks up county_geoid = state_fips + county_fips (48 + 453 = 48453).
+    # Should return county value if county file exists, else state value.
+    tx_place = _place("TX", "453", "05000", lid=21)  # Austin TX
+    out = static_loader.fetch_politics(None, [tx_place])  # type: ignore[arg-type]
+    v = next((r[2] for r in out if r[1] == "politics.partisan_lean_2024"), None)
+    assert v is not None
 
 
 def test_airport_distance_atlanta_close_to_atl_hub():
