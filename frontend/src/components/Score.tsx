@@ -2,61 +2,68 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "../api/client";
 import { useApp } from "../store";
 import { categoryLabel, formatScore, formatValue, scoreColor, sortedCategories } from "../format";
-import type { Location, MetricDef, ScoreResponse } from "../types";
+import type { Location, MetricDef, ScorePreviewResponse } from "../types";
 
-type ScoredLoc = ScoreResponse["locations"][0];
+type ScoredLoc = ScorePreviewResponse["locations"][0];
 
 export function Score({ metrics }: { metrics: MetricDef[] }) {
   const selected = useApp((s) => s.selected);
+  const workingPreferences = useApp((s) => s.workingPreferences);
   const activePresetId = useApp((s) => s.activePresetId);
-  const setActivePresetId = useApp((s) => s.setActivePresetId);
+  const presets = useApp((s) => s.presets);
   const clearLocations = useApp((s) => s.clearLocations);
-  const [data, setData] = useState<ScoreResponse | null>(null);
-  const [pendingGeoids, setPendingGeoids] = useState<Set<string>>(new Set());
+
+  const [data, setData] = useState<ScorePreviewResponse | null>(null);
+  const [scoring, setScoring] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fetchIdRef = useRef(0);
-  const loadedGeoidSetRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     setErr(null);
-    if (selected.length === 0 || activePresetId == null) {
+    if (selected.length === 0 || workingPreferences.length === 0) {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
       setData(null);
-      setPendingGeoids(new Set());
-      loadedGeoidSetRef.current = new Set();
+      setScoring(false);
       return;
     }
+    setScoring(true);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
     const id = ++fetchIdRef.current;
-    setPendingGeoids(
-      new Set(selected.map((l) => l.geoid).filter((g) => !loadedGeoidSetRef.current.has(g)))
-    );
-    api
-      .score(activePresetId, selected.map((s) => s.geoid))
-      .then((res) => {
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const res = await api.scorePreview(
+          selected.map((l) => l.geoid),
+          workingPreferences
+        );
         if (id !== fetchIdRef.current) return;
-        loadedGeoidSetRef.current = new Set(res.locations.map((l) => l.location.geoid));
         setData(res);
-        setPendingGeoids(new Set());
-      })
-      .catch((e) => {
+      } catch (e) {
         if (id !== fetchIdRef.current) return;
         const msg = String(e);
-        if (msg.includes("404")) {
-          // Stale persisted state — preset or locations no longer in DB.
-          if (msg.includes("preset")) setActivePresetId(null);
-          else clearLocations();
-        }
+        if (msg.includes("404")) clearLocations();
         setErr(msg);
-        setPendingGeoids(new Set());
-      });
-  }, [selected, activePresetId, setActivePresetId, clearLocations]);
+      } finally {
+        if (id === fetchIdRef.current) setScoring(false);
+      }
+    }, 350);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [selected, workingPreferences, clearLocations]);
+
+  const activePreset = presets.find((p) => p.id === activePresetId);
 
   if (selected.length === 0)
     return <div className="compare empty">Select locations to score.</div>;
-  if (activePresetId == null)
-    return <div className="compare empty">Create or activate a preset in the Preferences tab.</div>;
+  if (workingPreferences.length === 0)
+    return (
+      <div className="compare empty">
+        <span className="spinner" />
+      </div>
+    );
   if (err) return <div className="compare empty">Error: {err}</div>;
 
-  // Loaded locations, sorted by score descending
   const dataByGeoid = new Map<string, ScoredLoc>(
     data?.locations.map((l) => [l.location.geoid, l]) ?? []
   );
@@ -65,7 +72,8 @@ export function Score({ metrics }: { metrics: MetricDef[] }) {
     const bv = b.overall_score ?? -Infinity;
     return bv - av;
   });
-  const pendingLocs: Location[] = selected.filter((l) => pendingGeoids.has(l.geoid));
+  // Locations added since last completed fetch
+  const pendingLocs: Location[] = selected.filter((l) => !dataByGeoid.has(l.geoid));
 
   const mdef: Record<string, MetricDef> = {};
   for (const m of metrics) mdef[m.key] = m;
@@ -75,22 +83,26 @@ export function Score({ metrics }: { metrics: MetricDef[] }) {
   const usedMetrics = metrics.filter((m) => usedKeys.has(m.key));
   const cats = sortedCategories(usedMetrics.map((m) => m.category));
 
-  // Column order for breakdown: ranked loaded + pending at end
   const breakdownCols: Array<{ geoid: string; display_name: string; pending: boolean }> = [
-    ...ranked.map((r) => ({ geoid: r.location.geoid, display_name: r.location.display_name, pending: false })),
+    ...ranked.map((r) => ({
+      geoid: r.location.geoid,
+      display_name: r.location.display_name,
+      pending: false,
+    })),
     ...pendingLocs.map((l) => ({ geoid: l.geoid, display_name: l.display_name, pending: true })),
   ];
 
   return (
     <div className="compare">
-      {data && (
-        <div style={{ marginBottom: 12, color: "var(--text-dim)", fontSize: 12 }}>
-          Preset: <strong style={{ color: "var(--text)" }}>{data.preset.name}</strong>
-          {data.preset.description ? ` — ${data.preset.description}` : ""}
-        </div>
-      )}
+      <div style={{ marginBottom: 12, color: "var(--text-dim)", fontSize: 12, display: "flex", alignItems: "center", gap: 8 }}>
+        {activePreset ? (
+          <>Preset: <strong style={{ color: "var(--text)" }}>{activePreset.name}</strong></>
+        ) : (
+          "No preset selected"
+        )}
+        {scoring && <span className="spinner" />}
+      </div>
 
-      {/* Summary rank table */}
       <table>
         <thead>
           <tr>
@@ -126,13 +138,14 @@ export function Score({ metrics }: { metrics: MetricDef[] }) {
                   {loc.display_name}
                 </div>
               </td>
-              <td><span className="spinner" /></td>
+              <td>
+                <span className="spinner" />
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
 
-      {/* Per-metric breakdown — only shown once we have at least one loaded location */}
       {(ranked.length > 0 || pendingLocs.length > 0) && cats.length > 0 && (
         <div style={{ marginTop: 24 }}>
           <h3 style={{ fontSize: 12, textTransform: "uppercase", color: "var(--text-dim)" }}>

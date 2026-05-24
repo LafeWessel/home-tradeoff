@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "./api/client";
+import { defaultPreferenceFor } from "./defaults";
 import { Compare } from "./components/Compare";
 import { MapPane } from "./components/Map";
 import { Preferences } from "./components/Preferences";
@@ -9,10 +10,15 @@ import { Tray } from "./components/Tray";
 import { useApp } from "./store";
 import type { MetricDef } from "./types";
 
+const PANEL_LABELS = { compare: "Compare", score: "Rank", prefs: "Preferences" } as const;
+
 export default function App() {
-  const tab = useApp((s) => s.activeTab);
-  const setTab = useApp((s) => s.setTab);
+  const openPanels = useApp((s) => s.openPanels);
+  const togglePanel = useApp((s) => s.togglePanel);
   const setPresets = useApp((s) => s.setPresets);
+  const presets = useApp((s) => s.presets);
+  const activePresetId = useApp((s) => s.activePresetId);
+  const setWorkingPreferences = useApp((s) => s.setWorkingPreferences);
   const [metrics, setMetrics] = useState<MetricDef[]>([]);
   const [bootErr, setBootErr] = useState<string | null>(null);
 
@@ -24,6 +30,31 @@ export default function App() {
       })
       .catch((e) => setBootErr(String(e)));
   }, [setPresets]);
+
+  // Initialize (and reset after save) working preferences from the active preset.
+  useEffect(() => {
+    if (!activePresetId || metrics.length === 0 || presets.length === 0) return;
+    const preset = presets.find((p) => p.id === activePresetId);
+    if (!preset) return;
+    const byKey = new Map(preset.preferences.map((p) => [p.metric_key, p]));
+    setWorkingPreferences(
+      metrics.map((m) => {
+        const ex = byKey.get(m.key);
+        if (ex) {
+          return {
+            metric_key: ex.metric_key,
+            weight: ex.weight,
+            direction: ex.direction ?? m.direction,
+            ideal: ex.ideal,
+            cap: ex.cap,
+            tolerance: ex.tolerance,
+            enabled: ex.enabled,
+          };
+        }
+        return defaultPreferenceFor(m);
+      })
+    );
+  }, [activePresetId, presets, metrics, setWorkingPreferences]);
 
   if (bootErr)
     return (
@@ -41,15 +72,15 @@ export default function App() {
           Compare US locations on the data that matters
         </span>
         <nav className="nav">
-          <button className={tab === "compare" ? "active" : ""} onClick={() => setTab("compare")}>
-            Compare
-          </button>
-          <button className={tab === "score" ? "active" : ""} onClick={() => setTab("score")}>
-            Rank
-          </button>
-          <button className={tab === "prefs" ? "active" : ""} onClick={() => setTab("prefs")}>
-            Preferences
-          </button>
+          {(["compare", "score", "prefs"] as const).map((p) => (
+            <button
+              key={p}
+              className={openPanels.includes(p) ? "active" : ""}
+              onClick={() => togglePanel(p)}
+            >
+              {PANEL_LABELS[p]}
+            </button>
+          ))}
         </nav>
       </header>
 
@@ -58,9 +89,26 @@ export default function App() {
       <aside className="sidebar">
         <Search />
         <Tray />
-        {tab === "compare" && <Compare metrics={metrics} />}
-        {tab === "score" && <Score metrics={metrics} />}
-        {tab === "prefs" && <Preferences metrics={metrics} />}
+        <div className="panels">
+          {openPanels.includes("compare") && (
+            <>
+              <div className="panel-title">Compare</div>
+              <Compare metrics={metrics} />
+            </>
+          )}
+          {openPanels.includes("score") && (
+            <>
+              <div className="panel-title">Rank</div>
+              <Score metrics={metrics} />
+            </>
+          )}
+          {openPanels.includes("prefs") && (
+            <>
+              <div className="panel-title">Preferences</div>
+              <Preferences metrics={metrics} />
+            </>
+          )}
+        </div>
       </aside>
     </div>
   );
