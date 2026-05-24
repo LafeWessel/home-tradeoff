@@ -80,12 +80,11 @@ def fetch_climate(_db: Session, locations: list[Location]) -> list[tuple[int, st
         "jul_high_f": "climate.jul_high_f",
         "annual_precip_in": "climate.annual_precip_in",
         "annual_snowfall_in": "climate.annual_snowfall_in",
+        "avg_wind_speed_mph": "climate.avg_wind_speed_mph",
+        "annual_sunny_days": "climate.annual_sunny_days",
     }
     # Fields available at state level only (no county source exists)
-    STATE_ONLY_FIELDS: dict[str, str] = {
-        "annual_sunny_days": "climate.annual_sunny_days",
-        "avg_wind_speed_mph": "climate.avg_wind_speed_mph",
-    }
+    STATE_ONLY_FIELDS: dict[str, str] = {}
 
     out: list[tuple[int, str, float | None, str, int]] = []
     for loc in locations:
