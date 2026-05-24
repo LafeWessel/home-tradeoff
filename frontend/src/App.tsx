@@ -11,11 +11,14 @@ import { useApp } from "./store";
 import type { MetricDef } from "./types";
 
 const PANEL_LABELS = { compare: "Compare", score: "Rank", prefs: "Preferences" } as const;
-const PANEL_WIDTH = 400; // px per open panel column
+const PANEL_WIDTH = 400;
+const DATA_LABEL_WIDTH = 210;
+const DATA_LOC_WIDTH = 130;
 
 export default function App() {
   const openPanels = useApp((s) => s.openPanels);
   const togglePanel = useApp((s) => s.togglePanel);
+  const selected = useApp((s) => s.selected);
   const setPresets = useApp((s) => s.setPresets);
   const presets = useApp((s) => s.presets);
   const activePresetId = useApp((s) => s.activePresetId);
@@ -65,7 +68,8 @@ export default function App() {
       </div>
     );
 
-  const gridCols = `1fr${openPanels.map(() => ` ${PANEL_WIDTH}px`).join("")}`;
+  const dataWidth = Math.max(PANEL_WIDTH, DATA_LABEL_WIDTH + Math.max(1, selected.length) * DATA_LOC_WIDTH);
+  const gridCols = `1fr${openPanels.map((p) => ` ${p === "compare" || p === "score" ? dataWidth : PANEL_WIDTH}px`).join("")}`;
 
   return (
     <div className="app" style={{ gridTemplateColumns: gridCols }}>
