@@ -6,20 +6,44 @@ big or too irregular to hit a live API for every comparison.
 | File | Source | Refresh cadence | Notes |
 |------|--------|-----------------|-------|
 | `state_taxes.json` | Tax Foundation, NCSL, state DORs | Annual (Jan) | Income / sales / property / estate |
-| `state_climate.json` | NOAA NCEI 1991–2020 normals | ~10 yr | Already 1991–2020 normals; next update due 2031 |
+| `state_taxes_extra.json` | State revenue agencies | Annual | Retirement burden score, capital-gains top rate |
+| `state_climate.json` | NOAA NCEI 1991–2020 normals | ~10 yr | Next update due 2031 |
+| `state_heat_index.json` | NOAA | Annual | Summer apparent-temperature index |
 | `state_rpp.json` | BEA Regional Price Parities | Annual (~Dec) | All-items RPP, indexed to US=100 |
-| `state_col_components.json` | BEA SARPP (goods), Child Care Aware, KFF | Annual | Goods price index (2023), infant childcare cost (2024), marketplace health premium (2024) |
-| `county_fema_nri.json` | FEMA National Risk Index | Annual | Composite risk score per county FIPS |
+| `state_col_components.json` | BEA SARPP (goods), Child Care Aware, KFF | Annual | Grocery index, infant childcare cost, marketplace health premium |
+| `state_fema_nri.json` | FEMA National Risk Index | Annual | Composite hazard risk score per state |
+| `state_nri_components.json` | FEMA NRI | Annual | Hurricane / wildfire / tornado / flood sub-scores |
+| `state_crime.json` | FBI UCR / state agencies | Annual | Violent + property crime per 100k |
+| `state_utilities.json` | EIA, FCC | Annual | Electricity rate (¢/kWh), broadband coverage % |
+| `state_insurance.json` | Industry surveys | Annual | Avg annual homeowner insurance premium |
+| `state_education.json` | NAEP | Biennial | K-12 proficiency % (4th-grade reading + math) |
+| `state_health.json` | HRSA, CDC | Annual | Primary-care providers per 100k, life expectancy |
+| `state_growth.json` | Census, BLS | Annual | 5-yr population growth %, 5-yr job growth % |
+| `state_politics.json` | Cook PVI / 2024 election | Quadrennial | Partisan lean score |
+| `state_pm25.json` | EPA AQS | Annual | Annual mean PM2.5 (µg/m³) |
+| `state_housing_appreciation.json` | FHFA HPI | Annual | 10-yr home-price CAGR |
+| `airports_large_hubs.json` | FAA | As needed | Large-hub airport coordinates for distance metric |
+
+**Optional county-level overlays** (drop in to enable finer resolution):
+
+| File | What it adds |
+|------|-------------|
+| `county_fema_nri.json` | Per-county FEMA NRI composite score keyed by 5-digit FIPS |
+| `county_nri_components.json` | Per-county hurricane / wildfire / tornado / flood sub-scores |
+
+If these files are absent the app falls back to state-level values automatically.
 
 **Provenance.** Every value loaded from these files is written to the metric
 cache with `source` + `source_year` so the UI can show a clear "as of" stamp.
 
-**Refreshing.** When you want to update one of these files, replace the JSON
-and bump `source_year`. The next request that reads metric values will not
-automatically re-read from disk — run:
+**Refreshing.** When you want to update a file, edit the JSON in place and bump
+`source_year`. Because the static loader caches file contents at process start
+(`lru_cache`), you must **restart the API process** for the new values to take
+effect:
 
 ```bash
-python -m app.refresh static
+# In the backend terminal, Ctrl+C then:
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8765
 ```
 
-to invalidate the cached static rows.
+Or if using `scripts/dev.sh`, Ctrl+C and re-run it.

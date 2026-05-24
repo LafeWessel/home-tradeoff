@@ -79,9 +79,12 @@ pip install -e '.[dev]'
 # Seed the DB. With CENSUS_API_KEY set you get all states + ~3,143 counties +
 # ~10–15k places (population ≥ 5000). Without a key you get the 51 states only,
 # which is still enough to use every feature.
-python -m app.seed                       # full seed
+# Full seed takes ~5–10 min depending on Census API response time.
+python -m app.seed                       # full seed (Census key required for counties/places)
 # or:
-# python -m app.seed --states-only       # quick start, no API key needed
+# python -m app.seed --states-only       # 51 states only, no API key needed (~2 seconds)
+# python -m app.seed --places-min-population 10000  # fewer places (faster)
+# python -m app.seed --backfill-coords-only          # re-run lat/lon backfill only
 
 # Frontend
 cd ../frontend
