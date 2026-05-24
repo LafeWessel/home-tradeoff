@@ -28,6 +28,10 @@ backend/data.db-shm
 
 # OS
 .DS_Store
+
+# Large source data files (not committed — re-download via scripts)
+HarvardCountyElectionResults.zip
+countypres_2000-2024.csv
 Thumbs.db
 
 # IDE
