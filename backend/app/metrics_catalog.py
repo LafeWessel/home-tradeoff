@@ -656,6 +656,19 @@ CATALOG: list[MetricDef] = [
         source_label="USGS 3DEP EPQS",
         finest_level="county",
     ),
+    MetricDef(
+        key="env.plant_hardiness_zone",
+        label="Plant hardiness zone (approx)",
+        category="environment",
+        unit="zone",
+        direction=MetricDirection.target,
+        description="Approximate USDA Plant Hardiness Zone derived from NOAA January average-low temperature. "
+        "Decimal format: 6.5 = Zone 6b, 7.0 = Zone 7a. "
+        "Based on AAEMT ≈ jan_avg_low − 26°F; typically within ±1 half-zone of the official USDA map. "
+        "Higher = warmer winters, more plants survive outdoors.",
+        source_label="Derived — NOAA NCEI Normals (county)",
+        finest_level="county",
+    ),
 ]
 
 
