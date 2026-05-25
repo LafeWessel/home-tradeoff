@@ -563,3 +563,31 @@ def fetch_cancer(_db: Session, locations: list[Location]) -> list[tuple[int, str
             if "mortality_per_100k" in rec:
                 out.append((loc.id, "health.cancer_mortality_per_100k", rec["mortality_per_100k"], src, yr))
     return out
+
+
+def _county_scalar_loader(
+    file: str,
+    metric_key: str,
+    locations: list[Location],
+) -> list[tuple[int, str, float | None, str, int]]:
+    """Generic county-level scalar loader: county gets its own value, place inherits from parent county."""
+    blob = _load(file)
+    src, yr = blob["_meta"]["source"], int(blob["_meta"]["source_year"])
+    data: dict[str, float] = {k: float(v) for k, v in blob["data"].items()}
+    out: list[tuple[int, str, float | None, str, int]] = []
+    for loc in locations:
+        if loc.level == GeoLevel.county and loc.geoid in data:
+            out.append((loc.id, metric_key, data[loc.geoid], src, yr))
+        elif loc.level == GeoLevel.place and loc.state_fips and loc.county_fips:
+            county_geoid = loc.state_fips + loc.county_fips
+            if county_geoid in data:
+                out.append((loc.id, metric_key, data[county_geoid], src, yr))
+    return out
+
+
+def fetch_public_lands(_db: Session, locations: list[Location]):
+    return _county_scalar_loader("county_public_lands.json", "env.public_land_pct", locations)
+
+
+def fetch_elevation(_db: Session, locations: list[Location]):
+    return _county_scalar_loader("county_elevation.json", "env.elevation_ft", locations)

@@ -632,6 +632,30 @@ CATALOG: list[MetricDef] = [
         source_label="NCI / CDC State Cancer Profiles",
         finest_level="county",
     ),
+    # ───── Environment — public lands & elevation (county-level) ─────
+    MetricDef(
+        key="env.public_land_pct",
+        label="Public land share",
+        category="environment",
+        unit="%",
+        direction=MetricDirection.higher_better,
+        description="Share of county land area managed as Federal, State, Tribal, or Joint public land "
+        "(BLM, National Forest, National Park, State Parks, etc.). "
+        "Source: PAD-US 3.0 clipped to Census 2020 county boundaries.",
+        source_label="USGS PAD-US 3.0",
+        finest_level="county",
+    ),
+    MetricDef(
+        key="env.elevation_ft",
+        label="Elevation (county centroid)",
+        category="environment",
+        unit="ft",
+        direction=MetricDirection.target,
+        description="Elevation in feet at the 2020 Census population centroid of the county. "
+        "Proxy for altitude / mountainousness; does not capture elevation range within the county.",
+        source_label="USGS 3DEP EPQS",
+        finest_level="county",
+    ),
 ]
 
 
