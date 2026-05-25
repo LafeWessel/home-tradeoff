@@ -595,3 +595,18 @@ def fetch_elevation(_db: Session, locations: list[Location]):
 
 def fetch_plant_hardiness(_db: Session, locations: list[Location]):
     return _county_scalar_loader("county_plant_hardiness.json", "env.plant_hardiness_zone", locations)
+
+
+def fetch_firearms(_db: Session, locations: list[Location]) -> list[tuple[int, str, float | None, str, int]]:
+    blob = _load("state_firearms.json")
+    src, yr = blob["_meta"]["source"], int(blob["_meta"]["source_year"])
+    data = blob["data"]
+    out: list[tuple[int, str, float | None, str, int]] = []
+    for loc in locations:
+        abbr = loc.state_abbr
+        if not abbr or abbr not in data:
+            continue
+        d = data[abbr]
+        out.append((loc.id, "law.firearm_permitless_carry", float(d["permitless_carry"]), src, yr))
+        out.append((loc.id, "law.firearm_permissiveness", float(d["permissiveness"]), src, yr))
+    return out

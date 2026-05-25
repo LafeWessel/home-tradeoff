@@ -669,6 +669,32 @@ CATALOG: list[MetricDef] = [
         source_label="Derived — NOAA NCEI Normals (county)",
         finest_level="county",
     ),
+    # ───── Law — firearm regulations (state-level curated) ─────
+    MetricDef(
+        key="law.firearm_permitless_carry",
+        label="Permitless (constitutional) carry",
+        category="law",
+        unit="bool",
+        direction=MetricDirection.target,
+        description="1 if the state allows carrying a concealed handgun without a permit; 0 if a permit is required.",
+        source_label="NRA-ILA / curated (2025)",
+        finest_level="state",
+    ),
+    MetricDef(
+        key="law.firearm_permissiveness",
+        label="Firearm law permissiveness",
+        category="law",
+        unit="1–3",
+        direction=MetricDirection.target,
+        description=(
+            "Overall permissiveness of state firearm laws: "
+            "1 = restrictive (AWB, magazine capacity limits, or may-issue permitting system), "
+            "2 = standard shall-issue (permit required, few additional restrictions beyond training/background check), "
+            "3 = permissive (permitless carry allowed, no assault weapon ban or magazine limits)."
+        ),
+        source_label="NRA-ILA / curated (2025)",
+        finest_level="state",
+    ),
 ]
 
 
