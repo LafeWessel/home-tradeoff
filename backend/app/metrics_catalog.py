@@ -598,6 +598,40 @@ CATALOG: list[MetricDef] = [
         source_label="Census ACS 5-year",
         finest_level="place",
     ),
+    # ───── Health — obesity & cancer (county-level) ─────
+    MetricDef(
+        key="health.obesity_pct",
+        label="Adult obesity prevalence",
+        category="health",
+        unit="%",
+        direction=MetricDirection.lower_better,
+        description="Share of adults with BMI ≥ 30 (age-adjusted). "
+        "County-level model-based estimates. National average ~33 %.",
+        source_label="CDC PLACES 2025",
+        finest_level="county",
+    ),
+    MetricDef(
+        key="health.cancer_incidence_per_100k",
+        label="Cancer incidence rate",
+        category="health",
+        unit="per 100k",
+        direction=MetricDirection.lower_better,
+        description="Age-adjusted all-sites cancer incidence, 2018–2022 (cases per 100,000). "
+        "Counties with < ~16 cases/year are suppressed. National avg ~449.",
+        source_label="NCI / CDC State Cancer Profiles",
+        finest_level="county",
+    ),
+    MetricDef(
+        key="health.cancer_mortality_per_100k",
+        label="Cancer mortality rate",
+        category="health",
+        unit="per 100k",
+        direction=MetricDirection.lower_better,
+        description="Age-adjusted all-sites cancer mortality, 2019–2023 (deaths per 100,000). "
+        "Counties with < ~16 deaths/year are suppressed. National avg ~145.",
+        source_label="NCI / CDC State Cancer Profiles",
+        finest_level="county",
+    ),
 ]
 
 
