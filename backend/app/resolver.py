@@ -174,6 +174,7 @@ def ensure_metric_values(
     _upsert(db, static_loader.fetch_elevation(db, working))
     _upsert(db, static_loader.fetch_plant_hardiness(db, working))
     _upsert(db, static_loader.fetch_firearms(db, working))
+    _upsert(db, static_loader.fetch_outdoor_recreation(db, working))
     _upsert(db, airport.fetch_for_locations(db, working))
 
     # ---- FBI CDE live overlay (state) ----

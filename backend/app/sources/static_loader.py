@@ -610,3 +610,25 @@ def fetch_firearms(_db: Session, locations: list[Location]) -> list[tuple[int, s
         out.append((loc.id, "law.firearm_permitless_carry", float(d["permitless_carry"]), src, yr))
         out.append((loc.id, "law.firearm_permissiveness", float(d["permissiveness"]), src, yr))
     return out
+
+
+def fetch_outdoor_recreation(_db: Session, locations: list[Location]) -> list[tuple[int, str, float | None, str, int]]:
+    blob = _load("state_outdoor_recreation.json")
+    src, yr = blob["_meta"]["source"], int(blob["_meta"]["source_year"])
+    data = blob["data"]
+    out: list[tuple[int, str, float | None, str, int]] = []
+    fields = {
+        "hunting": "outdoor.hunting_rating",
+        "fishing": "outdoor.fishing_rating",
+        "foraging": "outdoor.foraging_rating",
+    }
+    for loc in locations:
+        abbr = loc.state_abbr
+        if not abbr or abbr not in data:
+            continue
+        d = data[abbr]
+        for field, metric_key in fields.items():
+            v = d.get(field)
+            if v is not None:
+                out.append((loc.id, metric_key, float(v), src, yr))
+    return out

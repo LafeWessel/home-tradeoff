@@ -695,6 +695,52 @@ CATALOG: list[MetricDef] = [
         source_label="NRA-ILA / curated (2025)",
         finest_level="state",
     ),
+    # ───── Outdoor recreation (state-level curated) ─────
+    MetricDef(
+        key="outdoor.hunting_rating",
+        label="Hunting availability",
+        category="outdoor",
+        unit="1–5",
+        direction=MetricDirection.higher_better,
+        description=(
+            "State-level hunting quality rating (1–5): species diversity, public land availability, "
+            "season generosity, license cost (especially for residents), predator management, and "
+            "cultural receptiveness. "
+            "5 = exceptional (MT, WY, SD, MN, CO, ID, AK), 1 = poor (HI, RI, DC)."
+        ),
+        source_label="Curated — AFWA / RMEF / TRCP (2024)",
+        finest_level="state",
+    ),
+    MetricDef(
+        key="outdoor.fishing_rating",
+        label="Fishing availability",
+        category="outdoor",
+        unit="1–5",
+        direction=MetricDirection.higher_better,
+        description=(
+            "State-level fishing quality rating (1–5): freshwater and saltwater access, "
+            "notable fisheries and species diversity, stocking programs, license cost, and "
+            "regulatory simplicity. "
+            "5 = exceptional (AK, MN, MI, FL, WI, MT, WY, OR, WA, LA, TX, ID), 1 = limited."
+        ),
+        source_label="Curated — AFWA / state agencies (2024)",
+        finest_level="state",
+    ),
+    MetricDef(
+        key="outdoor.foraging_rating",
+        label="Foraging availability",
+        category="outdoor",
+        unit="1–5",
+        direction=MetricDirection.higher_better,
+        description=(
+            "State-level wild edible foraging suitability (1–5): biome and climate diversity "
+            "for wild edibles (berries, mushrooms, nuts, greens, roots), forest cover, "
+            "public land access, and legal permissiveness for foraging. "
+            "5 = exceptional (Pacific NW, Great Lakes, Appalachia), 1 = poor (arid/urban)."
+        ),
+        source_label="Curated (2024)",
+        finest_level="state",
+    ),
 ]
 
 
