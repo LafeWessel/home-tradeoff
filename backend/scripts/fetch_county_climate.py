@@ -9,7 +9,9 @@ extracts the 1991-2020 30-year normals (period code 0010) to produce:
   climate.annual_precip_in — Annual precipitation (inches, sum of monthly normals)
 
 NClimDiv file format (fixed-width):
-  Chars 0-4:  5-digit county FIPS
+  Chars 0-1:  2-digit NClimDiv state code (NOT FIPS — NClimDiv uses its own
+              sequential numbering 01=AL,02=AZ,03=AR,...,48=WY, skipping AK/DC/HI)
+  Chars 2-4:  3-digit county FIPS code within the state (matches standard FIPS)
   Chars 5-6:  2-digit climate division code (within file, ignored here)
   Chars 7-10: 4-digit period code (0010 = 1991-2020)
   Remainder:  12 monthly values separated by spaces
@@ -50,6 +52,60 @@ NORMAL_PERIOD = "0010"  # 1991-2020 (the current WMO 30-year standard)
 MISSING_SENTINEL = -99.99  # NClimDiv uses -9.99 or -99.99 for missing values
 MISSING_THRESHOLD = -9.0
 
+# NClimDiv sequential state code → standard FIPS state code.
+# NClimDiv numbers the 48 contiguous states A-Z sequentially, skipping AK (02),
+# DC (11), and HI (15). Every state after AL diverges from FIPS.
+NCLIMDIV_STATE_TO_FIPS: dict[str, str] = {
+    "01": "01",  # Alabama
+    "02": "04",  # Arizona
+    "03": "05",  # Arkansas
+    "04": "06",  # California
+    "05": "08",  # Colorado
+    "06": "09",  # Connecticut
+    "07": "10",  # Delaware
+    "08": "12",  # Florida
+    "09": "13",  # Georgia
+    "10": "16",  # Idaho
+    "11": "17",  # Illinois
+    "12": "18",  # Indiana
+    "13": "19",  # Iowa
+    "14": "20",  # Kansas
+    "15": "21",  # Kentucky
+    "16": "22",  # Louisiana
+    "17": "23",  # Maine
+    "18": "24",  # Maryland
+    "19": "25",  # Massachusetts
+    "20": "26",  # Michigan
+    "21": "27",  # Minnesota
+    "22": "28",  # Mississippi
+    "23": "29",  # Missouri
+    "24": "30",  # Montana
+    "25": "31",  # Nebraska
+    "26": "32",  # Nevada
+    "27": "33",  # New Hampshire
+    "28": "34",  # New Jersey
+    "29": "35",  # New Mexico
+    "30": "36",  # New York
+    "31": "37",  # North Carolina
+    "32": "38",  # North Dakota
+    "33": "39",  # Ohio
+    "34": "40",  # Oklahoma
+    "35": "41",  # Oregon
+    "36": "42",  # Pennsylvania
+    "37": "44",  # Rhode Island
+    "38": "45",  # South Carolina
+    "39": "46",  # South Dakota
+    "40": "47",  # Tennessee
+    "41": "48",  # Texas
+    "42": "49",  # Utah
+    "43": "50",  # Vermont
+    "44": "51",  # Virginia
+    "45": "53",  # Washington
+    "46": "54",  # West Virginia
+    "47": "55",  # Wisconsin
+    "48": "56",  # Wyoming
+}
+
 
 def _download(url: str) -> str:
     try:
@@ -71,8 +127,8 @@ def _parse_normals(text: str, period: str) -> dict[str, list[float]]:
         line = line.rstrip()
         if len(line) < 11:
             continue
-        # Fixed-width key: county_fips (0:5), div (5:7), period (7:11)
-        fips = line[0:5]
+        # Fixed-width key: nclimdiv_state (0:2), county (2:5), div (5:7), period (7:11)
+        nclimdiv_key = line[0:5]
         record_period = line[7:11]
         if record_period != period:
             continue
@@ -90,9 +146,15 @@ def _parse_normals(text: str, period: str) -> dict[str, list[float]]:
         if any(v < MISSING_THRESHOLD for v in vals):
             skipped += 1
             continue
-        if not fips.isdigit() or fips == "00000":
+        if not nclimdiv_key.isdigit() or nclimdiv_key == "00000":
             skipped += 1
             continue
+        # Translate NClimDiv state code → FIPS state code; county code is identical
+        fips_state = NCLIMDIV_STATE_TO_FIPS.get(nclimdiv_key[:2])
+        if fips_state is None:
+            skipped += 1
+            continue
+        fips = fips_state + nclimdiv_key[2:]
         out[fips] = vals
     log.info("  Parsed %d county records for period %s (%d skipped)", len(out), period, skipped)
     return out

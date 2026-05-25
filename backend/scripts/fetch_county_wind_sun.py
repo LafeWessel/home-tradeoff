@@ -4,7 +4,7 @@ Fetch county-level annual average wind speed and sunny days from NCEI hourly
 normals (1991-2020).
 
 Variables:
-  HLY-WIND-AVGSPD — hourly average wind speed (tenths of mph)
+  HLY-WIND-AVGSPD — hourly average wind speed (mph)
   HLY-CLOD-PCTCLR — percent of hours with clear sky conditions
 
 Process:
@@ -272,7 +272,7 @@ def main():
     blob["_meta"]["avg_wind_speed_mph"] = {
         "source": "NOAA NCEI Hourly Normals 1991-2020",
         "source_year": 2020,
-        "note": "HLY-WIND-AVGSPD (tenths m/s) averaged over all valid hours, converted to mph",
+        "note": "HLY-WIND-AVGSPD (mph) averaged over all valid hours across the year",
     }
     blob["_meta"]["annual_sunny_days"] = {
         "source": "NOAA NCEI Hourly Normals 1991-2020",
