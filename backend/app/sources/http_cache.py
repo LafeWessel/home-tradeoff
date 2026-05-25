@@ -19,6 +19,7 @@ from typing import Any
 
 import httpx
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ..models.api_cache import ApiCache
@@ -134,7 +135,7 @@ def _cached_request(
     raw = json.dumps(payload).encode()
 
     if row is None:
-        row = ApiCache(
+        db.add(ApiCache(
             key=key,
             method=method.upper(),
             url=url,
@@ -143,13 +144,17 @@ def _cached_request(
             content_type=resp.headers.get("Content-Type"),
             ttl_seconds=ttl,
             fetched_at=now,
-        )
-        db.add(row)
+        ))
+        try:
+            db.commit()
+        except IntegrityError:
+            # Another concurrent request cached this key first — that's fine.
+            db.rollback()
     else:
         row.status = resp.status_code
         row.body = raw
         row.content_type = resp.headers.get("Content-Type")
         row.ttl_seconds = ttl
         row.fetched_at = now
-    db.commit()
+        db.commit()
     return payload
