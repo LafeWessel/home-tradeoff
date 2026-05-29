@@ -172,6 +172,7 @@ def ensure_metric_values(
     _upsert(db, static_loader.fetch_cancer(db, working))
     _upsert(db, static_loader.fetch_public_lands(db, working))
     _upsert(db, static_loader.fetch_elevation(db, working))
+    _upsert(db, static_loader.fetch_summits(db, working))
     _upsert(db, static_loader.fetch_plant_hardiness(db, working))
     _upsert(db, static_loader.fetch_firearms(db, working))
     _upsert(db, static_loader.fetch_outdoor_recreation(db, working))

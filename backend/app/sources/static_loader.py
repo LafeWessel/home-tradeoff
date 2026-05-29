@@ -593,6 +593,10 @@ def fetch_elevation(_db: Session, locations: list[Location]):
     return _county_scalar_loader("county_elevation.json", "env.elevation_ft", locations)
 
 
+def fetch_summits(_db: Session, locations: list[Location]):
+    return _county_scalar_loader("county_summits.json", "env.summit_count", locations)
+
+
 def fetch_plant_hardiness(_db: Session, locations: list[Location]):
     return _county_scalar_loader("county_plant_hardiness.json", "env.plant_hardiness_zone", locations)
 

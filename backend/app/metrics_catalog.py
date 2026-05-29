@@ -657,6 +657,18 @@ CATALOG: list[MetricDef] = [
         finest_level="county",
     ),
     MetricDef(
+        key="env.summit_count",
+        label="Named summits",
+        category="environment",
+        unit="peaks",
+        direction=MetricDirection.target,
+        description="Count of officially named summit features (peaks, mountains, hills) in the county "
+        "per the USGS Geographic Names Information System (GNIS) National File. "
+        "Higher counts indicate more mountainous terrain. Counties with no named summits have a value of 0.",
+        source_label="USGS GNIS National File",
+        finest_level="county",
+    ),
+    MetricDef(
         key="env.plant_hardiness_zone",
         label="Plant hardiness zone (approx)",
         category="environment",
