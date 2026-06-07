@@ -31,6 +31,7 @@ class ScoredMetric:
     ideal: float | None
     cap: float | None
     tolerance: float | None
+    level_resolved: str | None = None
 
 
 @dataclass
@@ -138,6 +139,7 @@ def score_locations(
                     ideal=p.ideal,
                     cap=p.cap,
                     tolerance=p.tolerance,
+                    level_resolved=mv.get("level_resolved"),
                 )
             )
             if s is None:

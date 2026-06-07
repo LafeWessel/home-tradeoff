@@ -108,6 +108,7 @@ class ScoredMetricOut(BaseModel):
     ideal: float | None
     cap: float | None
     tolerance: float | None
+    level_resolved: str | None = None
 
 
 class ScoredLocationOut(BaseModel):

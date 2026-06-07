@@ -318,7 +318,14 @@ function CategoryBreakdown({
                       }}
                     />
                   </div>
-                  <div className="metric-source">{formatValue(sm.raw_value, mdef[m.key])}</div>
+                  <div className="metric-source">
+                    {formatValue(sm.raw_value, mdef[m.key])}
+                    {sm.level_resolved && sm.level_resolved !== r?.location.level && (
+                      <span className={`resolved-tag${sm.level_resolved === "state" ? " resolved-tag--state" : ""}`}>
+                        ~{sm.level_resolved}
+                      </span>
+                    )}
+                  </div>
                 </td>
               );
             })}

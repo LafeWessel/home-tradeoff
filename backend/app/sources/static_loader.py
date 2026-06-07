@@ -542,6 +542,11 @@ def fetch_obesity(_db: Session, locations: list[Location]) -> list[tuple[int, st
             county_geoid = loc.state_fips + loc.county_fips
             if county_geoid in data:
                 out.append((loc.id, "health.obesity_pct", data[county_geoid], src, yr))
+        elif loc.level == GeoLevel.state:
+            sf = loc.geoid
+            vals = [v for k, v in data.items() if len(k) == 5 and k[:2] == sf]
+            if vals:
+                out.append((loc.id, "health.obesity_pct", sum(vals) / len(vals), src, yr))
     return out
 
 
@@ -562,6 +567,14 @@ def fetch_cancer(_db: Session, locations: list[Location]) -> list[tuple[int, str
                 out.append((loc.id, "health.cancer_incidence_per_100k", rec["incidence_per_100k"], src, yr))
             if "mortality_per_100k" in rec:
                 out.append((loc.id, "health.cancer_mortality_per_100k", rec["mortality_per_100k"], src, yr))
+        elif loc.level == GeoLevel.state:
+            sf = loc.geoid
+            inc_vals = [v["incidence_per_100k"] for k, v in data.items() if len(k) == 5 and k[:2] == sf and "incidence_per_100k" in v]
+            mort_vals = [v["mortality_per_100k"] for k, v in data.items() if len(k) == 5 and k[:2] == sf and "mortality_per_100k" in v]
+            if inc_vals:
+                out.append((loc.id, "health.cancer_incidence_per_100k", sum(inc_vals) / len(inc_vals), src, yr))
+            if mort_vals:
+                out.append((loc.id, "health.cancer_mortality_per_100k", sum(mort_vals) / len(mort_vals), src, yr))
     return out
 
 
@@ -569,8 +582,15 @@ def _county_scalar_loader(
     file: str,
     metric_key: str,
     locations: list[Location],
+    *,
+    use_sum: bool = False,
 ) -> list[tuple[int, str, float | None, str, int]]:
-    """Generic county-level scalar loader: county gets its own value, place inherits from parent county."""
+    """County-level scalar loader with state-level aggregation fallback.
+
+    Counties get their own value; places inherit from parent county (if county_fips set)
+    or via resolver cascade from state; states get mean (or sum when use_sum=True) of
+    their counties.
+    """
     blob = _load(file)
     src, yr = blob["_meta"]["source"], int(blob["_meta"]["source_year"])
     data: dict[str, float] = {k: float(v) for k, v in blob["data"].items()}
@@ -582,6 +602,12 @@ def _county_scalar_loader(
             county_geoid = loc.state_fips + loc.county_fips
             if county_geoid in data:
                 out.append((loc.id, metric_key, data[county_geoid], src, yr))
+        elif loc.level == GeoLevel.state:
+            sf = loc.geoid
+            vals = [v for k, v in data.items() if len(k) == 5 and k[:2] == sf]
+            if vals:
+                agg = sum(vals) if use_sum else sum(vals) / len(vals)
+                out.append((loc.id, metric_key, agg, src, yr))
     return out
 
 
@@ -594,7 +620,7 @@ def fetch_elevation(_db: Session, locations: list[Location]):
 
 
 def fetch_summits(_db: Session, locations: list[Location]):
-    return _county_scalar_loader("county_summits.json", "env.summit_count", locations)
+    return _county_scalar_loader("county_summits.json", "env.summit_count", locations, use_sum=True)
 
 
 def fetch_plant_hardiness(_db: Session, locations: list[Location]):

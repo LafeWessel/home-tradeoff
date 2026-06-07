@@ -84,9 +84,12 @@ const CATEGORY_LABELS: Record<string, string> = {
   crime: "Crime",
   employment: "Employment",
   health: "Health",
+  environment: "Environment",
   demographics: "Demographics & education",
   infrastructure: "Infrastructure",
   politics: "Politics",
+  law: "Law",
+  outdoor: "Outdoor recreation",
 };
 
 export function categoryLabel(c: string): string {
@@ -102,9 +105,12 @@ const CATEGORY_ORDER = [
   "crime",
   "employment",
   "health",
+  "environment",
   "demographics",
   "infrastructure",
   "politics",
+  "law",
+  "outdoor",
 ];
 
 export function sortedCategories(cats: string[]): string[] {

@@ -73,6 +73,7 @@ export interface ScoredMetric {
   ideal: number | null;
   cap: number | null;
   tolerance: number | null;
+  level_resolved: GeoLevel | null;
 }
 
 export interface ScoredLocation {
