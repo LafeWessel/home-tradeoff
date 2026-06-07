@@ -21,16 +21,18 @@ export function Preferences({ metrics }: Props) {
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [newPresetName, setNewPresetName] = useState("");
+  const [renaming, setRenaming] = useState(false);
+  const [renameName, setRenameName] = useState("");
 
   const active = useMemo(
     () => presets.find((p) => p.id === activePresetId) ?? null,
     [presets, activePresetId]
   );
 
-  // Reset dirty flag when active preset changes (covers preset switch + post-save reset)
   useEffect(() => {
     setDirty(false);
     setSavedAt(null);
+    setRenaming(false);
   }, [activePresetId]);
 
   const updateRow = (metric_key: string, patch: Partial<Preference>) => {
@@ -43,11 +45,28 @@ export function Preferences({ metrics }: Props) {
     setBusy(true);
     try {
       const updated = await api.setPreferences(active.id, workingPreferences);
-      setPresets(presets.map((p) => (p.id === updated.id ? updated : p)));
+      // Use functional updater to avoid stale closure over presets
+      setPresets(useApp.getState().presets.map((p) => (p.id === updated.id ? updated : p)));
       setDirty(false);
       setSavedAt(Date.now());
     } catch (e) {
       alert(`Save failed: ${e}`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const renameActive = async () => {
+    if (!active) return;
+    const name = renameName.trim();
+    if (!name || name === active.name) { setRenaming(false); return; }
+    setBusy(true);
+    try {
+      const updated = await api.updatePreset(active.id, { name });
+      setPresets(useApp.getState().presets.map((p) => (p.id === updated.id ? updated : p)));
+      setRenaming(false);
+    } catch (e) {
+      alert(`Rename failed: ${e}`);
     } finally {
       setBusy(false);
     }
@@ -126,8 +145,36 @@ export function Preferences({ metrics }: Props) {
             <button className="primary" disabled={!dirty || busy} onClick={save}>
               {busy ? "Saving…" : dirty ? "Save changes" : "Saved"}
             </button>
+            {renaming ? (
+              <>
+                <input
+                  className="rename-input"
+                  type="text"
+                  value={renameName}
+                  onChange={(e) => setRenameName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") renameActive();
+                    if (e.key === "Escape") setRenaming(false);
+                  }}
+                  autoFocus
+                />
+                <button onClick={renameActive} disabled={busy || !renameName.trim()}>
+                  Confirm
+                </button>
+                <button onClick={() => setRenaming(false)} disabled={busy}>
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => { setRenameName(active.name); setRenaming(true); }}
+                disabled={busy}
+              >
+                Rename
+              </button>
+            )}
             <button className="danger" onClick={deleteActive} disabled={busy}>
-              Delete preset
+              Delete
             </button>
             <span className={`save-status ${dirty ? "dirty" : savedAt ? "saved" : ""}`}>
               {dirty

@@ -544,6 +544,15 @@ html,
   opacity: 0.4;
   cursor: not-allowed;
 }
+.prefs .preset-actions .rename-input {
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--accent);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 12px;
+  min-width: 140px;
+}
 .prefs .save-status {
   font-size: 11px;
   color: var(--text-dim);
