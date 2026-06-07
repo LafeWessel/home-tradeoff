@@ -78,6 +78,8 @@ export function MapPane() {
   const hoveredStateRef = useRef<string | null>(null);
   const hoveredCountyRef = useRef<string | null>(null);
   const hoverPopupRef = useRef<Popup | null>(null);
+  const placePopupRef = useRef<Popup | null>(null);
+  const isHoveringPlaceRef = useRef(false);
   const activeFeatureStatesRef = useRef<Set<string>>(new Set());
   const countiesLoadedRef = useRef(false);
 
@@ -184,6 +186,7 @@ export function MapPane() {
 
         map.on("mousemove", "states-fill", (e) => {
           if (mapModeRef.current !== "states") return;
+          if (isHoveringPlaceRef.current) return;
           const feat = e.features?.[0];
           if (!feat) return;
           const id = String(feat.id);
@@ -219,6 +222,7 @@ export function MapPane() {
 
         map.on("click", "states-fill", async (e) => {
           if (mapModeRef.current !== "states") return;
+          if (isHoveringPlaceRef.current) return;
           const feat = e.features?.[0];
           if (!feat) return;
           const geoid = String(feat.id);
@@ -232,6 +236,7 @@ export function MapPane() {
 
         map.on("contextmenu", "states-fill", (e) => {
           e.originalEvent.preventDefault();
+          if (isHoveringPlaceRef.current) return;
           const feat = e.features?.[0];
           if (!feat) return;
           removeLocationRef.current(String(feat.id));
@@ -316,6 +321,7 @@ export function MapPane() {
 
           map.on("mousemove", "counties-fill", (e) => {
             if (mapModeRef.current !== "counties") return;
+            if (isHoveringPlaceRef.current) return;
             const feat = e.features?.[0];
             if (!feat) return;
             const id = String(feat.id);
@@ -352,6 +358,7 @@ export function MapPane() {
 
           map.on("click", "counties-fill", async (e) => {
             if (mapModeRef.current !== "counties") return;
+            if (isHoveringPlaceRef.current) return;
             const feat = e.features?.[0];
             if (!feat) return;
             const geoid = String(feat.id);
@@ -365,6 +372,7 @@ export function MapPane() {
 
           map.on("contextmenu", "counties-fill", (e) => {
             e.originalEvent.preventDefault();
+            if (isHoveringPlaceRef.current) return;
             const feat = e.features?.[0];
             if (!feat) return;
             removeLocationRef.current(String(feat.id));
@@ -435,6 +443,9 @@ export function MapPane() {
       if (!selectedSet.has(geoid) && !deselectedSet.has(geoid)) {
         marker.remove();
         placeMarkersRef.current.delete(geoid);
+        // If popup was open for this marker, close it
+        placePopupRef.current?.remove();
+        placePopupRef.current = null;
       }
     }
 
@@ -456,7 +467,24 @@ export function MapPane() {
           cursor:pointer;box-shadow:0 0 4px #0e1116;
           opacity:${opacity};transition:opacity 0.15s;
         `;
-        el.title = loc.display_name;
+        el.addEventListener("mouseenter", () => {
+          isHoveringPlaceRef.current = true;
+          hoverPopupRef.current?.remove();
+          hoverPopupRef.current = null;
+          placePopupRef.current?.remove();
+          placePopupRef.current = new Popup({ closeButton: false, closeOnClick: false, offset: 12 })
+            .setLngLat([loc.lon!, loc.lat!])
+            .setText(loc.display_name)
+            .addTo(mapRef.current!);
+        });
+        el.addEventListener("mouseleave", () => {
+          isHoveringPlaceRef.current = false;
+          placePopupRef.current?.remove();
+          placePopupRef.current = null;
+        });
+        el.addEventListener("click", () => {
+          addLocationRef.current(loc);
+        });
         el.addEventListener("contextmenu", (ev) => {
           ev.preventDefault();
           removeLocationRef.current(loc.geoid);
