@@ -654,6 +654,7 @@ export function MapPane({ metrics }: { metrics: MetricDef[] }) {
     }
     if (mapMode === "counties" && (countiesLoading || !countiesLoadedRef.current)) return;
 
+    setScoreData(null); // clear stale data before fetching for the new mode/metric
     const apiLevel: "state" | "county" = mapMode === "states" ? "state" : "county";
     let cancelled = false;
     setScoreFetching(true);
