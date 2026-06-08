@@ -24,14 +24,15 @@ async function fetchGeoJson(url: string): Promise<unknown> {
   return resp.json();
 }
 
+// Diverging scale: vivid red/green at extremes, desaturated warm gray at center
 const SCORE_COLOR_EXPR: maplibregl.ExpressionSpecification = [
   "interpolate",
   ["linear"],
   ["coalesce", ["feature-state", "scoreNorm"], -1],
-  -1, "rgba(0,0,0,0)",
-  0,   "#f85149",
-  50,  "#d29922",
-  100, "#3fb950",
+  -1,  "rgba(0,0,0,0)",
+  0,   "#e04040",
+  50,  "#807860",
+  100, "#30b048",
 ];
 
 const STYLE: maplibregl.StyleSpecification = {
@@ -687,8 +688,8 @@ export function MapPane({ metrics }: { metrics: MetricDef[] }) {
       map.setPaintProperty("counties-fill", "fill-opacity", scoreLayerOn ? 0 : 1);
 
     const isStates = mapMode === "states";
-    const stateOpacity = isStates && scoreLayerOn && scoreData ? 0.65 : 0;
-    const countyOpacity = !isStates && scoreLayerOn && scoreData ? 0.65 : 0;
+    const stateOpacity = isStates && scoreLayerOn && scoreData ? 0.45 : 0;
+    const countyOpacity = !isStates && scoreLayerOn && scoreData ? 0.45 : 0;
 
     if (!scoreData) {
       for (const geoid of scoreGeoidSetRef.current) {
