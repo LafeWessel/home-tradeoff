@@ -114,7 +114,9 @@ const CATEGORY_ORDER = [
 ];
 
 export function sortedCategories(cats: string[]): string[] {
-  return [...new Set(cats)].sort(
-    (a, b) => CATEGORY_ORDER.indexOf(a) - CATEGORY_ORDER.indexOf(b)
-  );
+  return [...new Set(cats)].sort((a, b) => {
+    const ai = CATEGORY_ORDER.indexOf(a);
+    const bi = CATEGORY_ORDER.indexOf(b);
+    return (ai === -1 ? Infinity : ai) - (bi === -1 ? Infinity : bi);
+  });
 }

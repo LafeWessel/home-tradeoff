@@ -143,7 +143,7 @@ export function Preferences({ metrics }: Props) {
         <>
           <div className="preset-actions">
             <button className="primary" disabled={!dirty || busy} onClick={save}>
-              {busy ? "Saving…" : dirty ? "Save changes" : "Saved"}
+              {busy ? "Saving…" : dirty ? "Save changes" : savedAt ? "Saved" : "No changes"}
             </button>
             {renaming ? (
               <>

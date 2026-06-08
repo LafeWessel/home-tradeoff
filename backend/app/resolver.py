@@ -23,7 +23,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .metrics_catalog import CATALOG, CATALOG_BY_KEY, MetricDef
+from .metrics_catalog import CATALOG, CATALOG_BY_KEY
 from .models.location import GeoLevel, Location
 from .models.metric_value import MetricValue
 from .sources import airport, bls, census, fbi, static_loader
@@ -70,32 +70,6 @@ def _missing_or_stale_metric_keys(
     return [k for k in metric_keys if k not in fresh]
 
 
-def _metrics_for_level(level: GeoLevel) -> list[MetricDef]:
-    """Metrics that are *natively* defined at this level (not via cascade)."""
-    rank = {GeoLevel.place: 3, GeoLevel.county: 2, GeoLevel.state: 1}
-    out: list[MetricDef] = []
-    for m in CATALOG:
-        try:
-            ml = GeoLevel(m.finest_level)
-        except ValueError:
-            continue
-        if rank[level] >= rank[ml] and ml == level:
-            out.append(m)
-    return out
-
-
-def _all_native_metrics(level: GeoLevel) -> list[MetricDef]:
-    """Metrics defined natively *at or below* this level — used when fetching."""
-    rank = {GeoLevel.place: 3, GeoLevel.county: 2, GeoLevel.state: 1}
-    out: list[MetricDef] = []
-    for m in CATALOG:
-        try:
-            ml = GeoLevel(m.finest_level)
-        except ValueError:
-            continue
-        if rank[ml] == rank[level]:
-            out.append(m)
-    return out
 
 
 def ensure_metric_values(
@@ -198,12 +172,19 @@ def _upsert(
     if not rows:
         return
     now = datetime.now(timezone.utc)
+    loc_ids = {r[0] for r in rows}
+    keys = {r[1] for r in rows}
+    existing_mvs = db.execute(
+        select(MetricValue).where(
+            MetricValue.location_id.in_(loc_ids),
+            MetricValue.metric_key.in_(keys),
+        )
+    ).scalars().all()
+    existing_map: dict[tuple[int, str], MetricValue] = {
+        (mv.location_id, mv.metric_key): mv for mv in existing_mvs
+    }
     for location_id, metric_key, value, source, year in rows:
-        existing = db.execute(
-            select(MetricValue).where(
-                MetricValue.location_id == location_id, MetricValue.metric_key == metric_key
-            )
-        ).scalar_one_or_none()
+        existing = existing_map.get((location_id, metric_key))
         if existing is None:
             db.add(
                 MetricValue(

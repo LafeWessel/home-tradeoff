@@ -2,6 +2,7 @@ from __future__ import annotations
 from pathlib import Path
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
+import anyio
 import httpx
 
 router = APIRouter()
@@ -13,13 +14,14 @@ _COUNTY_URL = "https://eric.clst.org/assets/wiki/uploads/Stuff/gz_2010_us_050_00
 
 
 async def _cached_geo(filename: str, url: str) -> Path:
-    _CACHE_DIR.mkdir(exist_ok=True)
+    await anyio.to_thread.run_sync(lambda: _CACHE_DIR.mkdir(exist_ok=True))
     path = _CACHE_DIR / filename
     if not path.exists():
         async with httpx.AsyncClient(timeout=60.0) as client:
             resp = await client.get(url)
             resp.raise_for_status()
-            path.write_bytes(resp.content)
+            content = resp.content
+        await anyio.to_thread.run_sync(lambda: path.write_bytes(content))
     return path
 
 
