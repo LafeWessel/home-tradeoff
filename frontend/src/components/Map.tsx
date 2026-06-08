@@ -160,6 +160,12 @@ export function MapPane({ metrics }: { metrics: MetricDef[] }) {
     map.getCanvas().style.cursor = "";
     hoverPopupRef.current?.remove();
     hoverPopupRef.current = null;
+    // Immediately clear score labels when mode switches so stale labels from the
+    // previous level don't persist until the new data fetch resolves.
+    if (scoreLayerOnRef.current) {
+      const labelsSource = map.getSource("score-labels") as maplibregl.GeoJSONSource | undefined;
+      if (labelsSource) labelsSource.setData({ type: "FeatureCollection", features: [] });
+    }
   }, [mapMode]);
 
   const selected = useApp((s) => s.selected);
@@ -654,9 +660,8 @@ export function MapPane({ metrics }: { metrics: MetricDef[] }) {
       setScoreData(null);
       return;
     }
-    if (mapMode === "counties" && (countiesLoading || !countiesLoadedRef.current)) return;
-
     setScoreData(null); // clear stale data before fetching for the new mode/metric
+    if (mapMode === "counties" && (countiesLoading || !countiesLoadedRef.current)) return;
     const apiLevel: "state" | "county" = mapMode === "states" ? "state" : "county";
     let cancelled = false;
     setScoreFetching(true);
