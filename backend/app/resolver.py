@@ -204,6 +204,73 @@ def _upsert(
     db.commit()
 
 
+def get_bulk_resolved_metrics(
+    db: Session, locations: list[Location]
+) -> dict[int, dict[str, dict]]:
+    """Batch version of get_resolved_metrics for many state/county locations.
+
+    Fetches all relevant metric values in a single DB query instead of one per
+    location, making it suitable for bulk map scoring of 50 states or 3k+ counties.
+    """
+    if not locations:
+        return {}
+
+    loc_by_id: dict[int, Location] = {loc.id: loc for loc in locations}
+    parent_geoids = {loc.parent_geoid for loc in locations if loc.parent_geoid}
+
+    parent_locs: list[Location] = []
+    if parent_geoids:
+        parent_locs = (
+            db.execute(select(Location).where(Location.geoid.in_(parent_geoids)))
+            .scalars()
+            .all()
+        )
+    parent_by_geoid: dict[str, Location] = {p.geoid: p for p in parent_locs}
+
+    all_ids = set(loc_by_id.keys()) | {p.id for p in parent_locs}
+
+    mvs = db.execute(
+        select(MetricValue).where(MetricValue.location_id.in_(all_ids))
+    ).scalars().all()
+    by_loc_metric: dict[tuple[int, str], MetricValue] = {
+        (mv.location_id, mv.metric_key): mv for mv in mvs
+    }
+
+    result: dict[int, dict[str, dict]] = {}
+    for loc in locations:
+        chain = [loc]
+        if loc.parent_geoid and loc.parent_geoid in parent_by_geoid:
+            chain.append(parent_by_geoid[loc.parent_geoid])
+
+        out: dict[str, dict] = {}
+        for m in CATALOG:
+            for c in chain:
+                mv = by_loc_metric.get((c.id, m.key))
+                if mv is not None and mv.value is not None:
+                    out[m.key] = {
+                        "value": mv.value,
+                        "source": mv.source,
+                        "source_year": mv.source_year,
+                        "fetched_at": mv.fetched_at.isoformat() if mv.fetched_at else None,
+                        "level_resolved": (
+                            c.level.value if isinstance(c.level, GeoLevel) else c.level
+                        ),
+                        "resolved_geoid": c.geoid,
+                    }
+                    break
+            else:
+                out[m.key] = {
+                    "value": None,
+                    "source": None,
+                    "source_year": None,
+                    "fetched_at": None,
+                    "level_resolved": None,
+                    "resolved_geoid": None,
+                }
+        result[loc.id] = out
+    return result
+
+
 def get_resolved_metrics(
     db: Session, location: Location
 ) -> dict[str, dict]:

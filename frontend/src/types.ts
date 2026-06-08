@@ -91,3 +91,14 @@ export interface ScoreResponse {
 export interface ScorePreviewResponse {
   locations: ScoredLocation[];
 }
+
+export interface MapScoreEntry {
+  score: number | null;
+  raw_value: number | null;
+  lat: number | null;
+  lon: number | null;
+}
+
+export interface MapScoreResponse {
+  scores: Record<string, MapScoreEntry>;
+}

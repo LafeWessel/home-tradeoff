@@ -95,7 +95,7 @@ export default function App() {
 
       <Tray />
 
-      <MapPane />
+      <MapPane metrics={metrics} />
 
       {openPanels.includes("compare") && (
         <aside className="panel-col">

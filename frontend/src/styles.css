@@ -136,11 +136,17 @@ html,
   border-top-color: var(--panel) !important;
   border-bottom-color: var(--panel) !important;
 }
-.map-mode-toggle {
+.map-controls-wrap {
   position: absolute;
   top: 12px;
   right: 12px;
   z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+.map-mode-toggle {
   display: flex;
   background: var(--panel);
   border: 1px solid var(--border);
@@ -170,6 +176,50 @@ html,
 .map-mode-toggle button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+.map-score-controls {
+  display: flex;
+  align-items: stretch;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+.map-score-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  padding: 6px 14px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition:
+    background 0.15s,
+    color 0.15s;
+  white-space: nowrap;
+}
+.map-score-btn.active {
+  background: rgba(63, 185, 80, 0.15);
+  color: var(--good);
+}
+.map-score-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.map-score-metric {
+  background: var(--panel-elev);
+  border: none;
+  border-left: 1px solid var(--border);
+  color: var(--text);
+  padding: 5px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  max-width: 180px;
+}
+.map-score-metric:focus {
+  outline: none;
+  background: var(--panel);
 }
 
 /* Panel columns — each open panel gets its own grid column */

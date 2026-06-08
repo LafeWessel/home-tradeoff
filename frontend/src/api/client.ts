@@ -1,6 +1,7 @@
 import type {
   CompareResponse,
   Location,
+  MapScoreResponse,
   MetricDef,
   Preference,
   Preset,
@@ -68,4 +69,10 @@ export const api = {
       geoids,
       preferences: preferences.map(({ id: _omit, ...rest }) => rest),
     }),
+
+  scoreMap: (params: { presetId: number; level: "state" | "county"; metricKey?: string }) => {
+    const p = new URLSearchParams({ preset_id: String(params.presetId), level: params.level });
+    if (params.metricKey) p.set("metric_key", params.metricKey);
+    return request<MapScoreResponse>("GET", `/api/score/map?${p.toString()}`);
+  },
 };

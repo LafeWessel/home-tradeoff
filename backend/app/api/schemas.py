@@ -125,3 +125,14 @@ class ScoreResponse(BaseModel):
 
 class ScorePreviewResponse(BaseModel):
     locations: list[ScoredLocationOut]
+
+
+class MapScoreEntry(BaseModel):
+    score: float | None       # 0–100 normalized via preset preference (None if no pref)
+    raw_value: float | None   # raw metric value (populated for metric-key mode)
+    lat: float | None
+    lon: float | None
+
+
+class MapScoreResponse(BaseModel):
+    scores: dict[str, MapScoreEntry]  # geoid → entry
