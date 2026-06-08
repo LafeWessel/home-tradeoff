@@ -177,21 +177,19 @@ def test_politics_signed_margin():
 
 
 def test_politics_county_gets_value():
-    # County and place locations should always get a value (county-specific if the county
-    # file has been generated, state fallback otherwise).
+    # Counties get their own value (county-specific if the county file exists).
     tx_county = _county("TX", "453", lid=11)   # Travis County (48453)
     out = static_loader.fetch_politics(None, [tx_county])  # type: ignore[arg-type]
     v = next((r[2] for r in out if r[1] == "politics.partisan_lean_2024"), None)
     assert v is not None
 
 
-def test_politics_place_uses_parent_county_or_state():
-    # Place looks up county_geoid = state_fips + county_fips (48 + 453 = 48453).
-    # Should return county value if county file exists, else state value.
+def test_politics_place_emits_nothing_for_resolver_cascade():
+    # Places do NOT get a value here; the resolver cascades place → county → state.
     tx_place = _place("TX", "453", "05000", lid=21)  # Austin TX
     out = static_loader.fetch_politics(None, [tx_place])  # type: ignore[arg-type]
     v = next((r[2] for r in out if r[1] == "politics.partisan_lean_2024"), None)
-    assert v is not None
+    assert v is None
 
 
 def test_airport_distance_atlanta_close_to_atl_hub():

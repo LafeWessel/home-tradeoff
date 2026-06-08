@@ -35,7 +35,8 @@ def fetch_taxes(_db: Session, locations: list[Location]) -> list[tuple[int, str,
     data = blob["data"]
     out: list[tuple[int, str, float | None, str, int]] = []
     for loc in locations:
-        # Tax data inherits up to state — every location with state_abbr gets it.
+        if loc.level != GeoLevel.state:
+            continue
         abbr = loc.state_abbr
         if not abbr or abbr not in data:
             continue
@@ -43,13 +44,7 @@ def fetch_taxes(_db: Session, locations: list[Location]) -> list[tuple[int, str,
         out.append((loc.id, "tax.income.top_marginal", float(d["top_marginal"]), src, yr))
         out.append((loc.id, "tax.sales.combined_avg", float(d["sales_combined"]), src, yr))
         out.append((loc.id, "tax.estate.has_estate_tax", float(d["estate_or_inherit"]), src, yr))
-        # Property tax effective rate from this file is state-level; county-level overrides
-        # come from another source (Census ACS).
-        if loc.level == GeoLevel.state:
-            out.append((loc.id, "tax.property.effective_rate", float(d["property_eff"]), src, yr))
-        # Structure stored as text via a separate companion metric (textual values
-        # bypass scoring; preserved for display).
-        # We store as a numeric proxy too: 0=none, 1=flat, 2=progressive, for sortability.
+        out.append((loc.id, "tax.property.effective_rate", float(d["property_eff"]), src, yr))
         struct_num = {"none": 0, "flat": 1, "progressive": 2}.get(d["structure"], None)
         if struct_num is not None:
             out.append((loc.id, "tax.income.flat_or_progressive", float(struct_num), src, yr))
@@ -93,22 +88,22 @@ def fetch_climate(_db: Session, locations: list[Location]) -> list[tuple[int, st
             continue
         sd = state_data[abbr]
 
-        # County-enhanced metrics: 3-tier county→place-parent-county→state
+        # County-enhanced metrics: store native data at its level; resolver cascades the rest.
         for field, metric_key in COUNTY_FIELDS.items():
             county_row: dict[str, float] | None = None
             if loc.level == GeoLevel.county and loc.geoid in county_climate:
                 county_row = county_climate[loc.geoid]
-            elif loc.level == GeoLevel.place and loc.state_fips and loc.county_fips:
-                county_row = county_climate.get(loc.state_fips + loc.county_fips)
 
             if county_row is not None and field in county_row:
                 out.append((loc.id, metric_key, float(county_row[field]), county_src, county_yr))
-            else:
+            elif loc.level == GeoLevel.state:
                 out.append((loc.id, metric_key, float(sd[field]), state_src, state_yr))
+            # else: place or county without county data — resolver cascades up
 
         # State-only metrics
         for field, metric_key in STATE_ONLY_FIELDS.items():
-            out.append((loc.id, metric_key, float(sd[field]), state_src, state_yr))
+            if loc.level == GeoLevel.state:
+                out.append((loc.id, metric_key, float(sd[field]), state_src, state_yr))
 
     return out
 
@@ -134,14 +129,9 @@ def fetch_rpp(_db: Session, locations: list[Location]) -> list[tuple[int, str, f
     for loc in locations:
         if loc.level == GeoLevel.county and loc.geoid in county_data:
             out.append((loc.id, "col.rpp", county_data[loc.geoid], county_src, county_yr))
-        elif loc.level == GeoLevel.place and loc.state_fips and loc.county_fips:
-            county_geoid = loc.state_fips + loc.county_fips
-            if county_geoid in county_data:
-                out.append((loc.id, "col.rpp", county_data[county_geoid], county_src, county_yr))
-            elif loc.state_abbr and loc.state_abbr in state_data:
-                out.append((loc.id, "col.rpp", float(state_data[loc.state_abbr]), state_src, state_yr))
-        elif loc.state_abbr and loc.state_abbr in state_data:
+        elif loc.level == GeoLevel.state and loc.state_abbr and loc.state_abbr in state_data:
             out.append((loc.id, "col.rpp", float(state_data[loc.state_abbr]), state_src, state_yr))
+        # places and counties without county data: resolver cascades to state
     return out
 
 
@@ -164,10 +154,11 @@ def fetch_fema(_db: Session, locations: list[Location]) -> list[tuple[int, str, 
     for loc in locations:
         if loc.level == GeoLevel.county and loc.geoid in county_data:
             out.append((loc.id, "hazard.fema_nri", county_data[loc.geoid], src, yr))
-            continue
-        abbr = loc.state_abbr
-        if abbr and abbr in state_data:
-            out.append((loc.id, "hazard.fema_nri", float(state_data[abbr]), src, yr))
+        elif loc.level == GeoLevel.state:
+            abbr = loc.state_abbr
+            if abbr and abbr in state_data:
+                out.append((loc.id, "hazard.fema_nri", float(state_data[abbr]), src, yr))
+        # places and counties without county data: resolver cascades to state
     return out
 
 
@@ -179,12 +170,15 @@ def fetch_fema(_db: Session, locations: list[Location]) -> list[tuple[int, str, 
 def _state_keyed_simple(
     file: str, metric_key: str, locations: list[Location]
 ) -> list[tuple[int, str, float | None, str, int]]:
-    """Emit one metric per location from a {state_abbr: scalar} JSON file."""
+    """Emit one metric per location from a {state_abbr: scalar} JSON file.
+    Only emits for state-level locations; county/place cascade via resolver."""
     blob = _load(file)
     src, yr = blob["_meta"]["source"], int(blob["_meta"]["source_year"])
     data = blob["data"]
     out: list[tuple[int, str, float | None, str, int]] = []
     for loc in locations:
+        if loc.level != GeoLevel.state:
+            continue
         abbr = loc.state_abbr
         if abbr and abbr in data:
             out.append((loc.id, metric_key, float(data[abbr]), src, yr))
@@ -194,12 +188,15 @@ def _state_keyed_simple(
 def _state_keyed_multi(
     file: str, field_to_metric: dict[str, str], locations: list[Location]
 ) -> list[tuple[int, str, float | None, str, int]]:
-    """Emit multiple metrics per location from a {state_abbr: {field: scalar, ...}} JSON file."""
+    """Emit multiple metrics per location from a {state_abbr: {field: scalar, ...}} JSON file.
+    Only emits for state-level locations; county/place cascade via resolver."""
     blob = _load(file)
     src, yr = blob["_meta"]["source"], int(blob["_meta"]["source_year"])
     data = blob["data"]
     out: list[tuple[int, str, float | None, str, int]] = []
     for loc in locations:
+        if loc.level != GeoLevel.state:
+            continue
         abbr = loc.state_abbr
         if not abbr or abbr not in data:
             continue
@@ -246,14 +243,9 @@ def fetch_housing_appreciation(_db: Session, locations: list[Location]):
     for loc in locations:
         if loc.level == GeoLevel.county and loc.geoid in county_data:
             out.append((loc.id, "housing.appreciation_10yr_cagr", county_data[loc.geoid], src, yr))
-        elif loc.level == GeoLevel.place and loc.state_fips and loc.county_fips:
-            county_geoid = loc.state_fips + loc.county_fips
-            if county_geoid in county_data:
-                out.append((loc.id, "housing.appreciation_10yr_cagr", county_data[county_geoid], src, yr))
-            elif loc.state_abbr and loc.state_abbr in state_data:
-                out.append((loc.id, "housing.appreciation_10yr_cagr", float(state_data[loc.state_abbr]), src, yr))
-        elif loc.state_abbr and loc.state_abbr in state_data:
+        elif loc.level == GeoLevel.state and loc.state_abbr and loc.state_abbr in state_data:
             out.append((loc.id, "housing.appreciation_10yr_cagr", float(state_data[loc.state_abbr]), src, yr))
+        # places and counties without county data: resolver cascades to state
     return out
 
 
@@ -288,13 +280,14 @@ def fetch_nri_components(_db: Session, locations: list[Location]):
             for f, mk in fields.items():
                 if f in d:
                     out.append((loc.id, mk, float(d[f]), src, yr))
-            continue
-        abbr = loc.state_abbr
-        if abbr and abbr in state_data:
-            d = state_data[abbr]
-            for f, mk in fields.items():
-                if f in d:
-                    out.append((loc.id, mk, float(d[f]), src, yr))
+        elif loc.level == GeoLevel.state:
+            abbr = loc.state_abbr
+            if abbr and abbr in state_data:
+                d = state_data[abbr]
+                for f, mk in fields.items():
+                    if f in d:
+                        out.append((loc.id, mk, float(d[f]), src, yr))
+        # places and counties without county data: resolver cascades to state
     return out
 
 
@@ -318,14 +311,9 @@ def fetch_pm25(_db: Session, locations: list[Location]):
     for loc in locations:
         if loc.level == GeoLevel.county and loc.geoid in county_data:
             out.append((loc.id, "env.pm25_annual", county_data[loc.geoid], src, yr))
-        elif loc.level == GeoLevel.place and loc.state_fips and loc.county_fips:
-            county_geoid = loc.state_fips + loc.county_fips
-            if county_geoid in county_data:
-                out.append((loc.id, "env.pm25_annual", county_data[county_geoid], src, yr))
-            elif loc.state_abbr and loc.state_abbr in state_data:
-                out.append((loc.id, "env.pm25_annual", float(state_data[loc.state_abbr]), src, yr))
-        elif loc.state_abbr and loc.state_abbr in state_data:
+        elif loc.level == GeoLevel.state and loc.state_abbr and loc.state_abbr in state_data:
             out.append((loc.id, "env.pm25_annual", float(state_data[loc.state_abbr]), src, yr))
+        # places and counties without county data: resolver cascades to state
     return out
 
 
@@ -360,14 +348,9 @@ def _fetch_county_scalar(
     for loc in locations:
         if loc.level == GeoLevel.county and loc.geoid in county_data:
             out.append((loc.id, metric_key, county_data[loc.geoid], src, yr))
-        elif loc.level == GeoLevel.place and loc.state_fips and loc.county_fips:
-            county_geoid = loc.state_fips + loc.county_fips
-            if county_geoid in county_data:
-                out.append((loc.id, metric_key, county_data[county_geoid], src, yr))
-            elif loc.state_abbr and loc.state_abbr in state_data:
-                out.append((loc.id, metric_key, float(state_data[loc.state_abbr][state_field]), src, yr))
-        elif loc.state_abbr and loc.state_abbr in state_data:
+        elif loc.level == GeoLevel.state and loc.state_abbr and loc.state_abbr in state_data:
             out.append((loc.id, metric_key, float(state_data[loc.state_abbr][state_field]), src, yr))
+        # places and counties without county data: resolver cascades to state
     return out
 
 
@@ -395,6 +378,8 @@ def fetch_homeschool_voucher(_db: Session, locations: list[Location]) -> list[tu
     data = blob["data"]
     out: list[tuple[int, str, float | None, str, int]] = []
     for loc in locations:
+        if loc.level != GeoLevel.state:
+            continue
         abbr = loc.state_abbr
         if not abbr or abbr not in data:
             continue
@@ -444,26 +429,13 @@ def fetch_growth(_db: Session, locations: list[Location]):
                 v = d.get(field)
                 if v is not None:
                     out.append((loc.id, metric_key, float(v), src, yr))
-        elif loc.level == GeoLevel.place and loc.state_fips and loc.county_fips:
-            county_geoid = loc.state_fips + loc.county_fips
-            if county_geoid in county_data:
-                d = county_data[county_geoid]
-                for field, metric_key in fields.items():
-                    v = d.get(field)
-                    if v is not None:
-                        out.append((loc.id, metric_key, float(v), src, yr))
-            elif loc.state_abbr and loc.state_abbr in state_data:
-                d = state_data[loc.state_abbr]
-                for field, metric_key in fields.items():
-                    v = d.get(field)
-                    if v is not None:
-                        out.append((loc.id, metric_key, float(v), src, yr))
-        elif loc.state_abbr and loc.state_abbr in state_data:
+        elif loc.level == GeoLevel.state and loc.state_abbr and loc.state_abbr in state_data:
             d = state_data[loc.state_abbr]
             for field, metric_key in fields.items():
                 v = d.get(field)
                 if v is not None:
                     out.append((loc.id, metric_key, float(v), src, yr))
+        # places and counties without county data: resolver cascades to state
     return out
 
 
@@ -487,14 +459,9 @@ def fetch_politics(_db: Session, locations: list[Location]):
     for loc in locations:
         if loc.level == GeoLevel.county and loc.geoid in county_data:
             out.append((loc.id, "politics.partisan_lean_2024", county_data[loc.geoid], src, yr))
-        elif loc.level == GeoLevel.place and loc.state_fips and loc.county_fips:
-            county_geoid = loc.state_fips + loc.county_fips
-            if county_geoid in county_data:
-                out.append((loc.id, "politics.partisan_lean_2024", county_data[county_geoid], src, yr))
-            elif loc.state_abbr and loc.state_abbr in state_data:
-                out.append((loc.id, "politics.partisan_lean_2024", float(state_data[loc.state_abbr]), src, yr))
-        elif loc.state_abbr and loc.state_abbr in state_data:
+        elif loc.level == GeoLevel.state and loc.state_abbr and loc.state_abbr in state_data:
             out.append((loc.id, "politics.partisan_lean_2024", float(state_data[loc.state_abbr]), src, yr))
+        # places and counties without county data: resolver cascades to state
     return out
 
 
@@ -524,6 +491,8 @@ def fetch_col_components(_db: Session, locations: list[Location]) -> list[tuple[
         yr = int(section["source_year"])
         data = section["data"]
         for loc in locations:
+            if loc.level != GeoLevel.state:
+                continue
             abbr = loc.state_abbr
             if abbr and abbr in data:
                 out.append((loc.id, metric_key, float(data[abbr]), src, yr))
@@ -538,15 +507,12 @@ def fetch_obesity(_db: Session, locations: list[Location]) -> list[tuple[int, st
     for loc in locations:
         if loc.level == GeoLevel.county and loc.geoid in data:
             out.append((loc.id, "health.obesity_pct", data[loc.geoid], src, yr))
-        elif loc.level == GeoLevel.place and loc.state_fips and loc.county_fips:
-            county_geoid = loc.state_fips + loc.county_fips
-            if county_geoid in data:
-                out.append((loc.id, "health.obesity_pct", data[county_geoid], src, yr))
         elif loc.level == GeoLevel.state:
             sf = loc.geoid
             vals = [v for k, v in data.items() if len(k) == 5 and k[:2] == sf]
             if vals:
                 out.append((loc.id, "health.obesity_pct", sum(vals) / len(vals), src, yr))
+        # places: cascade via resolver (county → state)
     return out
 
 
@@ -556,13 +522,8 @@ def fetch_cancer(_db: Session, locations: list[Location]) -> list[tuple[int, str
     data: dict[str, dict[str, float]] = blob["data"]
     out: list[tuple[int, str, float | None, str, int]] = []
     for loc in locations:
-        geoid = None
-        if loc.level == GeoLevel.county:
-            geoid = loc.geoid
-        elif loc.level == GeoLevel.place and loc.state_fips and loc.county_fips:
-            geoid = loc.state_fips + loc.county_fips
-        if geoid and geoid in data:
-            rec = data[geoid]
+        if loc.level == GeoLevel.county and loc.geoid in data:
+            rec = data[loc.geoid]
             if "incidence_per_100k" in rec:
                 out.append((loc.id, "health.cancer_incidence_per_100k", rec["incidence_per_100k"], src, yr))
             if "mortality_per_100k" in rec:
@@ -575,6 +536,7 @@ def fetch_cancer(_db: Session, locations: list[Location]) -> list[tuple[int, str
                 out.append((loc.id, "health.cancer_incidence_per_100k", sum(inc_vals) / len(inc_vals), src, yr))
             if mort_vals:
                 out.append((loc.id, "health.cancer_mortality_per_100k", sum(mort_vals) / len(mort_vals), src, yr))
+        # places: cascade via resolver (county → state)
     return out
 
 
@@ -585,11 +547,10 @@ def _county_scalar_loader(
     *,
     use_sum: bool = False,
 ) -> list[tuple[int, str, float | None, str, int]]:
-    """County-level scalar loader with state-level aggregation fallback.
+    """County-level scalar loader with state-level aggregation.
 
-    Counties get their own value; places inherit from parent county (if county_fips set)
-    or via resolver cascade from state; states get mean (or sum when use_sum=True) of
-    their counties.
+    Counties get their own value; states get mean (or sum when use_sum=True) of
+    their counties; places cascade via the resolver (county → state).
     """
     blob = _load(file)
     src, yr = blob["_meta"]["source"], int(blob["_meta"]["source_year"])
@@ -598,16 +559,13 @@ def _county_scalar_loader(
     for loc in locations:
         if loc.level == GeoLevel.county and loc.geoid in data:
             out.append((loc.id, metric_key, data[loc.geoid], src, yr))
-        elif loc.level == GeoLevel.place and loc.state_fips and loc.county_fips:
-            county_geoid = loc.state_fips + loc.county_fips
-            if county_geoid in data:
-                out.append((loc.id, metric_key, data[county_geoid], src, yr))
         elif loc.level == GeoLevel.state:
             sf = loc.geoid
             vals = [v for k, v in data.items() if len(k) == 5 and k[:2] == sf]
             if vals:
                 agg = sum(vals) if use_sum else sum(vals) / len(vals)
                 out.append((loc.id, metric_key, agg, src, yr))
+        # places: cascade via resolver (county → state)
     return out
 
 
@@ -633,6 +591,8 @@ def fetch_firearms(_db: Session, locations: list[Location]) -> list[tuple[int, s
     data = blob["data"]
     out: list[tuple[int, str, float | None, str, int]] = []
     for loc in locations:
+        if loc.level != GeoLevel.state:
+            continue
         abbr = loc.state_abbr
         if not abbr or abbr not in data:
             continue
@@ -653,6 +613,8 @@ def fetch_outdoor_recreation(_db: Session, locations: list[Location]) -> list[tu
         "foraging": "outdoor.foraging_rating",
     }
     for loc in locations:
+        if loc.level != GeoLevel.state:
+            continue
         abbr = loc.state_abbr
         if not abbr or abbr not in data:
             continue
