@@ -11,6 +11,7 @@ interface AppState {
   presets: Preset[];
   activePresetId: number | null;
   workingPreferences: Preference[];
+  prefsSavedVersion: number;
 
   addLocation: (l: Location) => void;
   removeLocation: (geoid: string) => void;
@@ -20,6 +21,7 @@ interface AppState {
   setActivePresetId: (id: number | null) => void;
   setWorkingPreferences: (prefs: Preference[]) => void;
   updateWorkingPreference: (metric_key: string, patch: Partial<Preference>) => void;
+  bumpPrefsSavedVersion: () => void;
 }
 
 export const useApp = create<AppState>()(
@@ -31,6 +33,7 @@ export const useApp = create<AppState>()(
       presets: [],
       activePresetId: null,
       workingPreferences: [],
+      prefsSavedVersion: 0,
 
       addLocation: (l) => {
         const { selected, deselected } = get();
@@ -72,6 +75,7 @@ export const useApp = create<AppState>()(
             r.metric_key === metric_key ? { ...r, ...patch } : r
           ),
         })),
+      bumpPrefsSavedVersion: () => set((s) => ({ prefsSavedVersion: s.prefsSavedVersion + 1 })),
     }),
     {
       name: "home-tradeoff",

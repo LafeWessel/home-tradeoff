@@ -184,6 +184,7 @@ export function MapPane({ metrics }: { metrics: MetricDef[] }) {
   }, [selected, deselected]);
 
   const activePresetId = useApp((s) => s.activePresetId);
+  const prefsSavedVersion = useApp((s) => s.prefsSavedVersion);
 
   // Score layer state
   const [scoreLayerOn, setScoreLayerOn] = useState(false);
@@ -660,8 +661,9 @@ export function MapPane({ metrics }: { metrics: MetricDef[] }) {
       setScoreData(null);
       return;
     }
-    setScoreData(null); // clear stale data before fetching for the new mode/metric
+    // Don't clear or fetch yet if counties haven't finished loading into the map
     if (mapMode === "counties" && (countiesLoading || !countiesLoadedRef.current)) return;
+    setScoreData(null); // clear stale data before fetching for the new mode/metric
     const apiLevel: "state" | "county" = mapMode === "states" ? "state" : "county";
     let cancelled = false;
     setScoreFetching(true);
@@ -671,7 +673,7 @@ export function MapPane({ metrics }: { metrics: MetricDef[] }) {
       .catch((err) => { if (!cancelled) console.error("score/map fetch:", err); })
       .finally(() => { if (!cancelled) setScoreFetching(false); });
     return () => { cancelled = true; };
-  }, [scoreLayerOn, scoreMetric, activePresetId, mapMode, countiesLoading]);
+  }, [scoreLayerOn, scoreMetric, activePresetId, mapMode, countiesLoading, prefsSavedVersion]);
 
   // Apply score data to map when it changes, and toggle layer visibility
   useEffect(() => {

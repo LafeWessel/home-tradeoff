@@ -16,6 +16,7 @@ export function Preferences({ metrics }: Props) {
   const setActivePresetId = useApp((s) => s.setActivePresetId);
   const workingPreferences = useApp((s) => s.workingPreferences);
   const updateWorkingPreference = useApp((s) => s.updateWorkingPreference);
+  const bumpPrefsSavedVersion = useApp((s) => s.bumpPrefsSavedVersion);
 
   const [dirty, setDirty] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
@@ -35,25 +36,30 @@ export function Preferences({ metrics }: Props) {
     setRenaming(false);
   }, [activePresetId]);
 
+  // Auto-save whenever working preferences are changed
+  useEffect(() => {
+    if (!dirty || !active || workingPreferences.length === 0) return;
+    setBusy(true);
+    const timer = setTimeout(async () => {
+      try {
+        const updated = await api.setPreferences(active.id, workingPreferences);
+        setPresets(useApp.getState().presets.map((p) => (p.id === updated.id ? updated : p)));
+        setDirty(false);
+        setSavedAt(Date.now());
+        bumpPrefsSavedVersion();
+      } catch (e) {
+        alert(`Auto-save failed: ${e}`);
+      } finally {
+        setBusy(false);
+      }
+    }, 600);
+    return () => { clearTimeout(timer); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dirty, workingPreferences]);
+
   const updateRow = (metric_key: string, patch: Partial<Preference>) => {
     updateWorkingPreference(metric_key, patch);
     setDirty(true);
-  };
-
-  const save = async () => {
-    if (!active) return;
-    setBusy(true);
-    try {
-      const updated = await api.setPreferences(active.id, workingPreferences);
-      // Use functional updater to avoid stale closure over presets
-      setPresets(useApp.getState().presets.map((p) => (p.id === updated.id ? updated : p)));
-      setDirty(false);
-      setSavedAt(Date.now());
-    } catch (e) {
-      alert(`Save failed: ${e}`);
-    } finally {
-      setBusy(false);
-    }
   };
 
   const renameActive = async () => {
@@ -142,9 +148,6 @@ export function Preferences({ metrics }: Props) {
       {active ? (
         <>
           <div className="preset-actions">
-            <button className="primary" disabled={!dirty || busy} onClick={save}>
-              {busy ? "Saving…" : dirty ? "Save changes" : savedAt ? "Saved" : "No changes"}
-            </button>
             {renaming ? (
               <>
                 <input
@@ -176,10 +179,10 @@ export function Preferences({ metrics }: Props) {
             <button className="danger" onClick={deleteActive} disabled={busy}>
               Delete
             </button>
-            <span className={`save-status ${dirty ? "dirty" : savedAt ? "saved" : ""}`}>
-              {dirty
-                ? "Unsaved changes"
-                : savedAt
+            <span className={`save-status ${busy ? "dirty" : savedAt && !dirty ? "saved" : ""}`}>
+              {busy
+                ? "Saving…"
+                : savedAt && !dirty
                 ? `Saved ${new Date(savedAt).toLocaleTimeString()}`
                 : ""}
             </span>
