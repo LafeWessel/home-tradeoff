@@ -221,23 +221,6 @@ html,
   outline: none;
   background: var(--panel);
 }
-.score-labels-overlay {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 4;
-  overflow: hidden;
-}
-.score-map-label {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  font-size: 10px;
-  font-weight: 700;
-  color: #fff;
-  text-shadow: 0 0 2px #000, 0 0 4px #000;
-  white-space: nowrap;
-  line-height: 1;
-}
 
 /* Panel columns — each open panel gets its own grid column */
 .panel-col {

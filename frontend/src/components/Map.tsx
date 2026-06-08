@@ -82,10 +82,46 @@ function savedMapView(): { center: [number, number]; zoom: number } {
 }
 
 function formatMapLabel(value: number): string {
-  if (Math.abs(value) >= 100) return Math.round(value).toString();
   if (Math.abs(value) >= 10) return Math.round(value).toString();
   if (Math.abs(value) >= 1) return value.toFixed(1);
   return value.toFixed(2);
+}
+
+// Render each unique label string onto a tiny canvas and register it as a
+// MapLibre image so the symbol layer can use icon-image without needing glyphs.
+function buildLabelImages(map: MlMap, labels: string[]) {
+  const scale = window.devicePixelRatio || 1;
+  const fontSize = 11;
+  const pad = 2;
+  // Reuse a scratch canvas for text measurement
+  const scratch = document.createElement("canvas").getContext("2d")!;
+  scratch.font = `bold ${fontSize}px sans-serif`;
+
+  for (const text of new Set(labels)) {
+    const id = `slbl:${text}`;
+    if (map.hasImage(id)) continue;
+
+    const tw = scratch.measureText(text).width;
+    const w = Math.ceil(tw) + pad * 2 + 2;
+    const h = fontSize + pad * 2 + 2;
+    const canvas = document.createElement("canvas");
+    canvas.width = w * scale;
+    canvas.height = h * scale;
+    const ctx = canvas.getContext("2d")!;
+    ctx.scale(scale, scale);
+    ctx.font = `bold ${fontSize}px sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    // Dark halo for legibility over any fill color
+    ctx.strokeStyle = "rgba(0,0,0,0.85)";
+    ctx.lineWidth = 3;
+    ctx.lineJoin = "round";
+    ctx.strokeText(text, w / 2, h / 2);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(text, w / 2, h / 2);
+    const raw = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    map.addImage(id, { width: canvas.width, height: canvas.height, data: new Uint8Array(raw.data.buffer) }, { pixelRatio: scale });
+  }
 }
 
 export function MapPane({ metrics }: { metrics: MetricDef[] }) {
@@ -100,7 +136,7 @@ export function MapPane({ metrics }: { metrics: MetricDef[] }) {
   const isHoveringPlaceRef = useRef(false);
   const activeFeatureStatesRef = useRef<Set<string>>(new Set());
   const countiesLoadedRef = useRef(false);
-  const scoreGeoidSetRef = useRef<Set<string>>(new Set()); // geoids that have scoreNorm set
+  const scoreGeoidSetRef = useRef<Set<string>>(new Set());
 
   const [mapMode, setMapMode] = useState<"states" | "counties">("states");
   const [countiesLoading, setCountiesLoading] = useState(false);
@@ -142,7 +178,6 @@ export function MapPane({ metrics }: { metrics: MetricDef[] }) {
   }, [selected, deselected]);
 
   const activePresetId = useApp((s) => s.activePresetId);
-  const workingPreferences = useApp((s) => s.workingPreferences);
 
   // Score layer state
   const [scoreLayerOn, setScoreLayerOn] = useState(false);
@@ -181,7 +216,6 @@ export function MapPane({ metrics }: { metrics: MetricDef[] }) {
         MAP_VIEW_KEY,
         JSON.stringify({ center: [c.lng, c.lat], zoom: map.getZoom() })
       );
-      renderScoreLabels(map);
     });
 
     map.on("load", async () => {
@@ -207,16 +241,13 @@ export function MapPane({ metrics }: { metrics: MetricDef[] }) {
           },
         });
 
-        // Score fill layer for states — always present, opacity toggled
+        // Score fill for states — always present, opacity toggled
         map.addLayer({
           id: "states-score-fill",
           type: "fill",
           source: "states-geo",
-          paint: {
-            "fill-color": SCORE_COLOR_EXPR,
-            "fill-opacity": 0,
-          },
-        }, "states-fill"); // insert below selection fill so selection highlight shows through
+          paint: { "fill-color": SCORE_COLOR_EXPR, "fill-opacity": 0 },
+        }, "states-fill");
 
         map.addLayer({
           id: "states-line",
@@ -229,10 +260,21 @@ export function MapPane({ metrics }: { metrics: MetricDef[] }) {
               ["boolean", ["feature-state", "hover"], false], "#58a6ff",
               "rgba(88,166,255,0.5)",
             ],
-            "line-width": [
-              "case",
-              ["boolean", ["feature-state", "hover"], false], 2, 1,
-            ],
+            "line-width": ["case", ["boolean", ["feature-state", "hover"], false], 2, 1],
+          },
+        });
+
+        // Score label source + icon-image symbol layer (no glyphs required)
+        map.addSource("score-labels", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+        map.addLayer({
+          id: "score-label-text",
+          type: "symbol",
+          source: "score-labels",
+          layout: {
+            "icon-image": ["concat", "slbl:", ["get", "label"]],
+            "icon-allow-overlap": true,
+            "icon-ignore-placement": true,
+            "visibility": "none",
           },
         });
 
@@ -294,7 +336,6 @@ export function MapPane({ metrics }: { metrics: MetricDef[] }) {
           removeLocationRef.current(String(feat.id));
         });
 
-        // Apply any already-selected states (e.g. from persisted store)
         const sel = selectedRef.current;
         const desel = deselectedRef.current;
         const selSet = new Set(sel.map((l) => l.geoid));
@@ -306,12 +347,6 @@ export function MapPane({ metrics }: { metrics: MetricDef[] }) {
           );
           activeFeatureStatesRef.current.add(loc.geoid);
           locationCacheRef.current.set(loc.geoid, loc);
-        }
-
-        // If score layer is already on (e.g. after hot-reload), reapply
-        if (scoreLayerOnRef.current) {
-          const sd = scoreDataRef.current;
-          if (sd) applyScoreDataToMap(map, sd);
         }
       } catch (err) {
         console.error("Failed to load state boundaries:", err);
@@ -358,16 +393,13 @@ export function MapPane({ metrics }: { metrics: MetricDef[] }) {
             },
           });
 
-          // Score fill layer for counties — always present, opacity toggled
+          // Score fill for counties — always present, opacity toggled
           map.addLayer({
             id: "counties-score-fill",
             type: "fill",
             source: "counties-geo",
             minzoom: 4,
-            paint: {
-              "fill-color": SCORE_COLOR_EXPR,
-              "fill-opacity": 0,
-            },
+            paint: { "fill-color": SCORE_COLOR_EXPR, "fill-opacity": 0 },
           }, "counties-fill");
 
           map.addLayer({
@@ -382,10 +414,7 @@ export function MapPane({ metrics }: { metrics: MetricDef[] }) {
                 ["boolean", ["feature-state", "hover"], false], "#d29922",
                 "rgba(210,153,34,0.4)",
               ],
-              "line-width": [
-                "case",
-                ["boolean", ["feature-state", "hover"], false], 2.5, 1.5,
-              ],
+              "line-width": ["case", ["boolean", ["feature-state", "hover"], false], 2.5, 1.5],
             },
           });
 
@@ -448,7 +477,6 @@ export function MapPane({ metrics }: { metrics: MetricDef[] }) {
             removeLocationRef.current(String(feat.id));
           });
 
-          // Apply already-selected/deselected counties
           const sel = selectedRef.current;
           const desel = deselectedRef.current;
           const selSet = new Set(sel.map((l) => l.geoid));
@@ -484,7 +512,6 @@ export function MapPane({ metrics }: { metrics: MetricDef[] }) {
     const selectedSet = new Set(selected.map((l) => l.geoid));
     const deselectedSet = new Set(deselected.map((l) => l.geoid));
 
-    // Clear old feature states
     for (const geoid of activeFeatureStatesRef.current) {
       const loc = locationCacheRef.current.get(geoid);
       if (!loc) continue;
@@ -495,7 +522,6 @@ export function MapPane({ metrics }: { metrics: MetricDef[] }) {
     }
     activeFeatureStatesRef.current = new Set();
 
-    // Set new feature states
     for (const loc of [...selected, ...deselected]) {
       if (loc.level === "place") continue;
       const source = loc.level === "state" ? "states-geo" : "counties-geo";
@@ -508,7 +534,6 @@ export function MapPane({ metrics }: { metrics: MetricDef[] }) {
       locationCacheRef.current.set(loc.geoid, loc);
     }
 
-    // Manage place dot markers
     for (const [geoid, { marker }] of placeMarkersRef.current.entries()) {
       if (!selectedSet.has(geoid) && !deselectedSet.has(geoid)) {
         marker.remove();
@@ -551,9 +576,7 @@ export function MapPane({ metrics }: { metrics: MetricDef[] }) {
           placePopupRef.current?.remove();
           placePopupRef.current = null;
         });
-        el.addEventListener("click", () => {
-          addLocationRef.current(loc);
-        });
+        el.addEventListener("click", () => { addLocationRef.current(loc); });
         el.addEventListener("contextmenu", (ev) => {
           ev.preventDefault();
           removeLocationRef.current(loc.geoid);
@@ -564,60 +587,16 @@ export function MapPane({ metrics }: { metrics: MetricDef[] }) {
         placeMarkersRef.current.set(loc.geoid, { marker, el });
       }
     }
-
   }, [selected, deselected]);
 
   // ── Score layer ──────────────────────────────────────────────────────────────
 
-  const scoreDataRef = useRef<Record<string, MapScoreEntry> | null>(null);
-  useEffect(() => { scoreDataRef.current = scoreData; }, [scoreData]);
-  const scoreMetricRef = useRef(scoreMetric);
-  useEffect(() => { scoreMetricRef.current = scoreMetric; }, [scoreMetric]);
-  const metricsRef = useRef(metrics);
-  useEffect(() => { metricsRef.current = metrics; }, [metrics]);
-  const scoreLabelsOverlayRef = useRef<HTMLDivElement | null>(null);
-
-  // Render score labels as CSS-positioned HTML elements (no external font needed)
-  function renderScoreLabels(map: MlMap) {
-    const overlay = scoreLabelsOverlayRef.current;
-    if (!overlay) return;
-    overlay.innerHTML = "";
-    const data = scoreDataRef.current;
-    if (!data || !scoreLayerOnRef.current) return;
-
-    const currentMetric = scoreMetricRef.current;
-    const isOverall = !currentMetric;
-    const zoom = map.getZoom();
-    // Show county labels only when zoomed in enough to be useful
-    const isCountyData = Object.keys(data).some((g) => g.length > 2);
-    if (isCountyData && zoom < 5) return;
-
-    const bounds = map.getBounds();
-    for (const [, entry] of Object.entries(data)) {
-      if (entry.lat === null || entry.lon === null) continue;
-      if (!bounds.contains([entry.lon, entry.lat])) continue;
-      const labelValue = isOverall ? entry.score : (entry.raw_value ?? entry.score);
-      if (labelValue === null) continue;
-      const pt = map.project([entry.lon, entry.lat]);
-      const span = document.createElement("span");
-      span.className = "score-map-label";
-      span.style.left = `${pt.x}px`;
-      span.style.top = `${pt.y}px`;
-      span.textContent = formatMapLabel(labelValue);
-      overlay.appendChild(span);
-    }
-  }
-
-  // Helper that applies score data to map layers (called from effects and map-load callback)
   function applyScoreDataToMap(map: MlMap, data: Record<string, MapScoreEntry>) {
     const metricDef = scoreMetric ? metrics.find((m) => m.key === scoreMetric) : null;
     const direction = metricDef?.direction ?? "higher_better";
     const isOverall = !scoreMetric;
 
-    // Compute min/max of raw_values for client-side normalization (when score is null)
-    const rawValues = Object.values(data)
-      .map((e) => e.raw_value)
-      .filter((v): v is number => v !== null);
+    const rawValues = Object.values(data).map((e) => e.raw_value).filter((v): v is number => v !== null);
     const minRaw = rawValues.length ? Math.min(...rawValues) : 0;
     const maxRaw = rawValues.length ? Math.max(...rawValues) : 1;
     const rawRange = maxRaw - minRaw || 1;
@@ -625,13 +604,12 @@ export function MapPane({ metrics }: { metrics: MetricDef[] }) {
     // Clear old score feature states
     for (const geoid of scoreGeoidSetRef.current) {
       const source = geoid.length <= 2 ? "states-geo" : "counties-geo";
-      if (map.getSource(source)) {
-        map.setFeatureState({ source, id: geoid }, { scoreNorm: undefined });
-      }
+      if (map.getSource(source)) map.setFeatureState({ source, id: geoid }, { scoreNorm: undefined });
     }
     scoreGeoidSetRef.current = new Set();
 
-    // Apply new score feature states
+    // Build label data while applying feature states
+    const labelEntries: Array<{ lon: number; lat: number; label: string }> = [];
     for (const [geoid, entry] of Object.entries(data)) {
       let scoreNorm: number | undefined;
       if (entry.score !== null) {
@@ -647,9 +625,25 @@ export function MapPane({ metrics }: { metrics: MetricDef[] }) {
           scoreGeoidSetRef.current.add(geoid);
         }
       }
+      const labelValue = isOverall ? entry.score : (entry.raw_value ?? entry.score);
+      if (labelValue !== null && entry.lat !== null && entry.lon !== null) {
+        labelEntries.push({ lon: entry.lon, lat: entry.lat, label: formatMapLabel(labelValue) });
+      }
     }
 
-    renderScoreLabels(map);
+    // Register canvas images for each unique label string, then update source
+    buildLabelImages(map, labelEntries.map((e) => e.label));
+    const labelsSource = map.getSource("score-labels") as maplibregl.GeoJSONSource | undefined;
+    if (labelsSource) {
+      labelsSource.setData({
+        type: "FeatureCollection",
+        features: labelEntries.map(({ lon, lat, label }) => ({
+          type: "Feature",
+          geometry: { type: "Point", coordinates: [lon, lat] },
+          properties: { label },
+        })),
+      });
+    }
   }
 
   // Fetch score data when the score layer is on and relevant params change
@@ -658,7 +652,6 @@ export function MapPane({ metrics }: { metrics: MetricDef[] }) {
       setScoreData(null);
       return;
     }
-    // For counties mode, wait until counties are loaded
     if (mapMode === "counties" && (countiesLoading || !countiesLoadedRef.current)) return;
 
     const apiLevel: "state" | "county" = mapMode === "states" ? "state" : "county";
@@ -682,24 +675,23 @@ export function MapPane({ metrics }: { metrics: MetricDef[] }) {
     const countyOpacity = !isStates && scoreLayerOn && scoreData ? 0.65 : 0;
 
     if (!scoreData) {
-      // Clear score feature states and labels
       for (const geoid of scoreGeoidSetRef.current) {
         const source = geoid.length <= 2 ? "states-geo" : "counties-geo";
-        if (map.getSource(source)) {
-          map.setFeatureState({ source, id: geoid }, { scoreNorm: undefined });
-        }
+        if (map.getSource(source)) map.setFeatureState({ source, id: geoid }, { scoreNorm: undefined });
       }
       scoreGeoidSetRef.current = new Set();
-      if (scoreLabelsOverlayRef.current) scoreLabelsOverlayRef.current.innerHTML = "";
+      const labelsSource = map.getSource("score-labels") as maplibregl.GeoJSONSource | undefined;
+      if (labelsSource) labelsSource.setData({ type: "FeatureCollection", features: [] });
       if (map.getLayer("states-score-fill")) map.setPaintProperty("states-score-fill", "fill-opacity", 0);
       if (map.getLayer("counties-score-fill")) map.setPaintProperty("counties-score-fill", "fill-opacity", 0);
+      if (map.getLayer("score-label-text")) map.setLayoutProperty("score-label-text", "visibility", "none");
       return;
     }
 
     applyScoreDataToMap(map, scoreData);
-
     if (map.getLayer("states-score-fill")) map.setPaintProperty("states-score-fill", "fill-opacity", stateOpacity);
     if (map.getLayer("counties-score-fill")) map.setPaintProperty("counties-score-fill", "fill-opacity", countyOpacity);
+    if (map.getLayer("score-label-text")) map.setLayoutProperty("score-label-text", "visibility", scoreLayerOn ? "visible" : "none");
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scoreData, scoreLayerOn, mapMode]);
 
@@ -716,7 +708,6 @@ export function MapPane({ metrics }: { metrics: MetricDef[] }) {
   return (
     <div className="map-pane">
       <div ref={containerRef} id="map" />
-      <div ref={scoreLabelsOverlayRef} className="score-labels-overlay" />
       <div className="map-controls-wrap">
         <div className="map-mode-toggle">
           <button
