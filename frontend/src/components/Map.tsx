@@ -670,6 +670,12 @@ export function MapPane({ metrics }: { metrics: MetricDef[] }) {
     const map = mapRef.current;
     if (!map || !map.isStyleLoaded()) return;
 
+    // Hide selection highlight fills while the score layer is active
+    if (map.getLayer("states-fill"))
+      map.setPaintProperty("states-fill", "fill-opacity", scoreLayerOn ? 0 : 1);
+    if (map.getLayer("counties-fill"))
+      map.setPaintProperty("counties-fill", "fill-opacity", scoreLayerOn ? 0 : 1);
+
     const isStates = mapMode === "states";
     const stateOpacity = isStates && scoreLayerOn && scoreData ? 0.65 : 0;
     const countyOpacity = !isStates && scoreLayerOn && scoreData ? 0.65 : 0;
