@@ -36,7 +36,6 @@ const SCORE_COLOR_EXPR: maplibregl.ExpressionSpecification = [
 
 const STYLE: maplibregl.StyleSpecification = {
   version: 8,
-  glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
   sources: {
     osm: {
       type: "raster",
@@ -182,6 +181,7 @@ export function MapPane({ metrics }: { metrics: MetricDef[] }) {
         MAP_VIEW_KEY,
         JSON.stringify({ center: [c.lng, c.lat], zoom: map.getZoom() })
       );
+      renderScoreLabels(map);
     });
 
     map.on("load", async () => {
@@ -233,30 +233,6 @@ export function MapPane({ metrics }: { metrics: MetricDef[] }) {
               "case",
               ["boolean", ["feature-state", "hover"], false], 2, 1,
             ],
-          },
-        });
-
-        // Score labels source (always present, updated when score data arrives)
-        map.addSource("score-labels", {
-          type: "geojson",
-          data: { type: "FeatureCollection", features: [] },
-        });
-
-        map.addLayer({
-          id: "score-label-text",
-          type: "symbol",
-          source: "score-labels",
-          layout: {
-            "text-field": ["get", "label"],
-            "text-size": 11,
-            "text-font": ["Open Sans Regular"],
-            "text-anchor": "center",
-            "visibility": "none",
-          },
-          paint: {
-            "text-color": "#ffffff",
-            "text-halo-color": "#000000",
-            "text-halo-width": 1.5,
           },
         });
 
@@ -595,6 +571,42 @@ export function MapPane({ metrics }: { metrics: MetricDef[] }) {
 
   const scoreDataRef = useRef<Record<string, MapScoreEntry> | null>(null);
   useEffect(() => { scoreDataRef.current = scoreData; }, [scoreData]);
+  const scoreMetricRef = useRef(scoreMetric);
+  useEffect(() => { scoreMetricRef.current = scoreMetric; }, [scoreMetric]);
+  const metricsRef = useRef(metrics);
+  useEffect(() => { metricsRef.current = metrics; }, [metrics]);
+  const scoreLabelsOverlayRef = useRef<HTMLDivElement | null>(null);
+
+  // Render score labels as CSS-positioned HTML elements (no external font needed)
+  function renderScoreLabels(map: MlMap) {
+    const overlay = scoreLabelsOverlayRef.current;
+    if (!overlay) return;
+    overlay.innerHTML = "";
+    const data = scoreDataRef.current;
+    if (!data || !scoreLayerOnRef.current) return;
+
+    const currentMetric = scoreMetricRef.current;
+    const isOverall = !currentMetric;
+    const zoom = map.getZoom();
+    // Show county labels only when zoomed in enough to be useful
+    const isCountyData = Object.keys(data).some((g) => g.length > 2);
+    if (isCountyData && zoom < 5) return;
+
+    const bounds = map.getBounds();
+    for (const [, entry] of Object.entries(data)) {
+      if (entry.lat === null || entry.lon === null) continue;
+      if (!bounds.contains([entry.lon, entry.lat])) continue;
+      const labelValue = isOverall ? entry.score : (entry.raw_value ?? entry.score);
+      if (labelValue === null) continue;
+      const pt = map.project([entry.lon, entry.lat]);
+      const span = document.createElement("span");
+      span.className = "score-map-label";
+      span.style.left = `${pt.x}px`;
+      span.style.top = `${pt.y}px`;
+      span.textContent = formatMapLabel(labelValue);
+      overlay.appendChild(span);
+    }
+  }
 
   // Helper that applies score data to map layers (called from effects and map-load callback)
   function applyScoreDataToMap(map: MlMap, data: Record<string, MapScoreEntry>) {
@@ -637,27 +649,7 @@ export function MapPane({ metrics }: { metrics: MetricDef[] }) {
       }
     }
 
-    // Build label GeoJSON
-    const features = Object.entries(data)
-      .filter(([, e]) => {
-        const hasDisplayValue = isOverall ? e.score !== null : e.raw_value !== null || e.score !== null;
-        return hasDisplayValue && e.lat !== null && e.lon !== null;
-      })
-      .map(([geoid, e]) => {
-        const labelValue = isOverall
-          ? e.score!
-          : (e.raw_value ?? e.score)!;
-        return {
-          type: "Feature" as const,
-          geometry: { type: "Point" as const, coordinates: [e.lon!, e.lat!] },
-          properties: { geoid, label: formatMapLabel(labelValue) },
-        };
-      });
-
-    const labelsSource = map.getSource("score-labels") as maplibregl.GeoJSONSource | undefined;
-    if (labelsSource) {
-      labelsSource.setData({ type: "FeatureCollection", features });
-    }
+    renderScoreLabels(map);
   }
 
   // Fetch score data when the score layer is on and relevant params change
@@ -690,7 +682,7 @@ export function MapPane({ metrics }: { metrics: MetricDef[] }) {
     const countyOpacity = !isStates && scoreLayerOn && scoreData ? 0.65 : 0;
 
     if (!scoreData) {
-      // Clear score feature states
+      // Clear score feature states and labels
       for (const geoid of scoreGeoidSetRef.current) {
         const source = geoid.length <= 2 ? "states-geo" : "counties-geo";
         if (map.getSource(source)) {
@@ -698,11 +690,9 @@ export function MapPane({ metrics }: { metrics: MetricDef[] }) {
         }
       }
       scoreGeoidSetRef.current = new Set();
-      const labelsSource = map.getSource("score-labels") as maplibregl.GeoJSONSource | undefined;
-      if (labelsSource) labelsSource.setData({ type: "FeatureCollection", features: [] });
+      if (scoreLabelsOverlayRef.current) scoreLabelsOverlayRef.current.innerHTML = "";
       if (map.getLayer("states-score-fill")) map.setPaintProperty("states-score-fill", "fill-opacity", 0);
       if (map.getLayer("counties-score-fill")) map.setPaintProperty("counties-score-fill", "fill-opacity", 0);
-      if (map.getLayer("score-label-text")) map.setLayoutProperty("score-label-text", "visibility", "none");
       return;
     }
 
@@ -710,9 +700,6 @@ export function MapPane({ metrics }: { metrics: MetricDef[] }) {
 
     if (map.getLayer("states-score-fill")) map.setPaintProperty("states-score-fill", "fill-opacity", stateOpacity);
     if (map.getLayer("counties-score-fill")) map.setPaintProperty("counties-score-fill", "fill-opacity", countyOpacity);
-    if (map.getLayer("score-label-text")) {
-      map.setLayoutProperty("score-label-text", "visibility", scoreLayerOn ? "visible" : "none");
-    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scoreData, scoreLayerOn, mapMode]);
 
@@ -729,6 +716,7 @@ export function MapPane({ metrics }: { metrics: MetricDef[] }) {
   return (
     <div className="map-pane">
       <div ref={containerRef} id="map" />
+      <div ref={scoreLabelsOverlayRef} className="score-labels-overlay" />
       <div className="map-controls-wrap">
         <div className="map-mode-toggle">
           <button
