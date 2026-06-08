@@ -392,6 +392,8 @@ export function MapPane({ metrics }: { metrics: MetricDef[] }) {
               ],
             },
           });
+          // If score layer was already on when counties loaded, hide the selection fill immediately
+          if (scoreLayerOnRef.current) map.setPaintProperty("counties-fill", "fill-opacity", 0);
 
           // Score fill for counties — always present, opacity toggled
           map.addLayer({
@@ -700,7 +702,7 @@ export function MapPane({ metrics }: { metrics: MetricDef[] }) {
     if (map.getLayer("counties-score-fill")) map.setPaintProperty("counties-score-fill", "fill-opacity", countyOpacity);
     if (map.getLayer("score-label-text")) map.setLayoutProperty("score-label-text", "visibility", scoreLayerOn ? "visible" : "none");
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scoreData, scoreLayerOn, mapMode]);
+  }, [scoreData, scoreLayerOn, mapMode, countiesLoading]);
 
   const handleScoreToggle = () => {
     if (scoreLayerOn) {
