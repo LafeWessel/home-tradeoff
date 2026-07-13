@@ -83,6 +83,56 @@ const DEFAULTS: Record<string, DefaultSpec> = {
   "demo.race.asian_pct": { ideal: 6, tolerance: 15 },
   "demo.race.native_american_pct": { ideal: 1, tolerance: 5 },
   "demo.race.other_pct": { ideal: 10, tolerance: 15 },
+
+  // Cost of living components
+  "col.grocery_index": { ideal: 95, cap: 115 },
+  "col.childcare_infant_annual": { ideal: 8_000, cap: 20_000 },
+  "col.healthcare_marketplace_monthly": { ideal: 350, cap: 750 },
+
+  // Climate extras
+  "climate.annual_snowfall_in": { ideal: 20, tolerance: 40 },
+  "climate.annual_sunny_days": { ideal: 220, cap: 150 },
+  "climate.avg_wind_speed_mph": { ideal: 8, tolerance: 6 },
+
+  // Education policy
+  "edu.homeschool_regulation_level": { ideal: 1, cap: 5 },
+  "edu.school_voucher_program": { ideal: 2, cap: 0 },
+
+  // Health
+  "health.obesity_pct": { ideal: 25, cap: 40 },
+  "health.cancer_incidence_per_100k": { ideal: 350, cap: 550 },
+  "health.cancer_mortality_per_100k": { ideal: 110, cap: 180 },
+
+  // Environment / terrain
+  "env.public_land_pct": { ideal: 25, cap: 0 },
+  "env.elevation_ft": { ideal: 1000, tolerance: 3000 },
+  "env.summit_count": { ideal: 10, tolerance: 30 },
+  "env.plant_hardiness_zone": { ideal: 7, tolerance: 3 },
+
+  // Law — firearms
+  "law.firearm_permitless_carry": { ideal: 1, tolerance: 1.5 },
+  "law.firearm_permissiveness": { ideal: 3, tolerance: 2 },
+
+  // Outdoor recreation
+  "outdoor.hunting_rating": { ideal: 5, cap: 1 },
+  "outdoor.fishing_rating": { ideal: 5, cap: 1 },
+  "outdoor.foraging_rating": { ideal: 5, cap: 1 },
+
+  // Religion (Pew Research Religious Landscape Study). Defaults track US
+  // national shares with wide tolerances — same rationale as race/ethnicity
+  // above: personal, so don't let it dominate scoring unless dialed in.
+  "religion.christian_pct": { ideal: 72, tolerance: 40 },
+  "religion.evangelical_pct": { ideal: 19, tolerance: 30 },
+  "religion.catholic_pct": { ideal: 21, tolerance: 25 },
+  "religion.unaffiliated_pct": { ideal: 30, tolerance: 30 },
+  // County-level, different methodology (congregational adherents, not
+  // self-identification) — see metrics_catalog.py description. Wide
+  // tolerance both for the personal-preference rationale above and because
+  // a handful of counties report >100% (regional-congregation artifact).
+  "religion.adherence_pct": { ideal: 49, tolerance: 45 },
+  "religion.christian_adherent_pct": { ideal: 46, tolerance: 35 },
+  "religion.evangelical_adherent_pct": { ideal: 16, tolerance: 25 },
+  "religion.catholic_adherent_pct": { ideal: 19, tolerance: 20 },
 };
 
 export function defaultPreferenceFor(m: MetricDef): Preference {

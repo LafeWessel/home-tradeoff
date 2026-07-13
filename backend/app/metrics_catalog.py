@@ -753,6 +753,101 @@ CATALOG: list[MetricDef] = [
         source_label="Curated (2024)",
         finest_level="state",
     ),
+    # ───── Religion (Pew Research Religious Landscape Study — state-level) ─────
+    MetricDef(
+        key="religion.christian_pct",
+        label="Christian population share",
+        category="religion",
+        unit="%",
+        direction=MetricDirection.target,
+        description="Share of adults identifying as Christian (Evangelical + Mainline Protestant, "
+        "Historically Black Protestant, Catholic, Latter-day Saint, Orthodox, Jehovah's Witness, "
+        "Other Christian, combined). National average ~72%.",
+        source_label="Pew Research Religious Landscape Study 2023-24",
+        finest_level="state",
+    ),
+    MetricDef(
+        key="religion.evangelical_pct",
+        label="Evangelical Protestant share",
+        category="religion",
+        unit="%",
+        direction=MetricDirection.target,
+        description="Share of adults identifying as Evangelical Protestant. National average ~19%.",
+        source_label="Pew Research Religious Landscape Study 2023-24",
+        finest_level="state",
+    ),
+    MetricDef(
+        key="religion.catholic_pct",
+        label="Catholic population share",
+        category="religion",
+        unit="%",
+        direction=MetricDirection.target,
+        description="Share of adults identifying as Catholic. National average ~21%.",
+        source_label="Pew Research Religious Landscape Study 2023-24",
+        finest_level="state",
+    ),
+    MetricDef(
+        key="religion.unaffiliated_pct",
+        label="Religiously unaffiliated share",
+        category="religion",
+        unit="%",
+        direction=MetricDirection.target,
+        description="Share of adults who are religiously unaffiliated — atheist, agnostic, or "
+        "'nothing in particular' (the 'nones'). National average ~30%.",
+        source_label="Pew Research Religious Landscape Study 2023-24",
+        finest_level="state",
+    ),
+    MetricDef(
+        key="religion.adherence_pct",
+        label="Religious adherence rate",
+        category="religion",
+        unit="%",
+        direction=MetricDirection.target,
+        description="Formal congregational adherents (members + attendees + children, any of 372 "
+        "participating religious bodies) as % of county population. County-level, unlike the "
+        "other religion metrics above. Not directly comparable to the self-identification-based "
+        "Pew figures — national average here is ~49%. A small number of low-population counties "
+        "exceed 100% because a regional congregation's adherents can outnumber its home county's "
+        "population.",
+        source_label="2020 U.S. Religion Census (ASARB)",
+        finest_level="county",
+    ),
+    MetricDef(
+        key="religion.christian_adherent_pct",
+        label="Christian adherence rate (county)",
+        category="religion",
+        unit="%",
+        direction=MetricDirection.target,
+        description="County-level analog of religion.christian_pct, but derived from ASARB "
+        "congregational adherents rather than Pew self-identification — see "
+        "religion.adherence_pct for the methodology caveat. Individual denominations grouped "
+        "into families using a RELTRAD-style classification. National average ~46% (vs. Pew's "
+        "self-identified ~72%; adherent counts run well below self-identification everywhere).",
+        source_label="2020 U.S. Religion Census (ASARB), family classification",
+        finest_level="county",
+    ),
+    MetricDef(
+        key="religion.evangelical_adherent_pct",
+        label="Evangelical Protestant adherence rate (county)",
+        category="religion",
+        unit="%",
+        direction=MetricDirection.target,
+        description="County-level analog of religion.evangelical_pct, derived from ASARB "
+        "congregational adherents — see religion.adherence_pct for the methodology caveat.",
+        source_label="2020 U.S. Religion Census (ASARB), family classification",
+        finest_level="county",
+    ),
+    MetricDef(
+        key="religion.catholic_adherent_pct",
+        label="Catholic adherence rate (county)",
+        category="religion",
+        unit="%",
+        direction=MetricDirection.target,
+        description="County-level analog of religion.catholic_pct, derived from ASARB "
+        "congregational adherents — see religion.adherence_pct for the methodology caveat.",
+        source_label="2020 U.S. Religion Census (ASARB), family classification",
+        finest_level="county",
+    ),
 ]
 
 

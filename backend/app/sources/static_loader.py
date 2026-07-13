@@ -602,6 +602,51 @@ def fetch_firearms(_db: Session, locations: list[Location]) -> list[tuple[int, s
     return out
 
 
+def fetch_religion(_db: Session, locations: list[Location]):
+    return _state_keyed_multi(
+        "state_religion.json",
+        {
+            "christian_pct": "religion.christian_pct",
+            "evangelical_pct": "religion.evangelical_pct",
+            "catholic_pct": "religion.catholic_pct",
+            "unaffiliated_pct": "religion.unaffiliated_pct",
+        },
+        locations,
+    )
+
+
+def fetch_religion_adherence(_db: Session, locations: list[Location]):
+    return _county_scalar_loader(
+        "county_religion_adherence.json", "religion.adherence_pct", locations
+    )
+
+
+def fetch_religion_family(_db: Session, locations: list[Location]) -> list[tuple[int, str, float | None, str, int]]:
+    blob = _load("county_religion_family.json")
+    src, yr = blob["_meta"]["source"], int(blob["_meta"]["source_year"])
+    data: dict[str, dict[str, float]] = blob["data"]
+    fields = {
+        "christian_adherent_pct": "religion.christian_adherent_pct",
+        "evangelical_adherent_pct": "religion.evangelical_adherent_pct",
+        "catholic_adherent_pct": "religion.catholic_adherent_pct",
+    }
+    out: list[tuple[int, str, float | None, str, int]] = []
+    for loc in locations:
+        if loc.level == GeoLevel.county and loc.geoid in data:
+            rec = data[loc.geoid]
+            for field, metric_key in fields.items():
+                if field in rec:
+                    out.append((loc.id, metric_key, float(rec[field]), src, yr))
+        elif loc.level == GeoLevel.state:
+            sf = loc.geoid
+            for field, metric_key in fields.items():
+                vals = [v[field] for k, v in data.items() if len(k) == 5 and k[:2] == sf and field in v]
+                if vals:
+                    out.append((loc.id, metric_key, sum(vals) / len(vals), src, yr))
+        # places: cascade via resolver (county → state)
+    return out
+
+
 def fetch_outdoor_recreation(_db: Session, locations: list[Location]) -> list[tuple[int, str, float | None, str, int]]:
     blob = _load("state_outdoor_recreation.json")
     src, yr = blob["_meta"]["source"], int(blob["_meta"]["source_year"])

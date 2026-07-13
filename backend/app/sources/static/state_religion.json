@@ -1,0 +1,309 @@
+{
+  "_meta": {
+    "source": "Pew Research Center, Religious Landscape Study (2023-2024)",
+    "source_year": 2024,
+    "notes": "christian_pct = sum of Evangelical Protestant, Mainline Protestant, Historically Black Protestant, Catholic, Latter-day Saint, Orthodox Christian, Jehovah's Witness, and Other Christian shares. evangelical_pct = Evangelical Protestant share alone. catholic_pct = Catholic share alone. unaffiliated_pct = sum of Atheist, Agnostic, and 'Nothing in particular' shares (the religiously unaffiliated / 'nones'). Values are percent of adult population, rounded to source precision; '<1' recorded as 0.5. DC not surveyed as a separate row in the source table."
+  },
+  "data": {
+    "AK": {
+      "christian_pct": 57.5,
+      "evangelical_pct": 26.0,
+      "catholic_pct": 15.0,
+      "unaffiliated_pct": 33.0
+    },
+    "AL": {
+      "christian_pct": 74.5,
+      "evangelical_pct": 43.0,
+      "catholic_pct": 6.0,
+      "unaffiliated_pct": 23.0
+    },
+    "AR": {
+      "christian_pct": 79.0,
+      "evangelical_pct": 50.0,
+      "catholic_pct": 5.0,
+      "unaffiliated_pct": 18.0
+    },
+    "AZ": {
+      "christian_pct": 58.5,
+      "evangelical_pct": 19.0,
+      "catholic_pct": 21.0,
+      "unaffiliated_pct": 30.0
+    },
+    "CA": {
+      "christian_pct": 55.0,
+      "evangelical_pct": 16.0,
+      "catholic_pct": 25.0,
+      "unaffiliated_pct": 33.0
+    },
+    "CO": {
+      "christian_pct": 51.5,
+      "evangelical_pct": 17.0,
+      "catholic_pct": 14.0,
+      "unaffiliated_pct": 40.0
+    },
+    "CT": {
+      "christian_pct": 58.0,
+      "evangelical_pct": 6.0,
+      "catholic_pct": 35.0,
+      "unaffiliated_pct": 30.0
+    },
+    "DE": {
+      "christian_pct": 71.5,
+      "evangelical_pct": 19.0,
+      "catholic_pct": 19.0,
+      "unaffiliated_pct": 24.0
+    },
+    "FL": {
+      "christian_pct": 64.0,
+      "evangelical_pct": 22.0,
+      "catholic_pct": 22.0,
+      "unaffiliated_pct": 27.0
+    },
+    "GA": {
+      "christian_pct": 68.0,
+      "evangelical_pct": 33.0,
+      "catholic_pct": 8.0,
+      "unaffiliated_pct": 26.0
+    },
+    "HI": {
+      "christian_pct": 60.5,
+      "evangelical_pct": 20.0,
+      "catholic_pct": 16.0,
+      "unaffiliated_pct": 30.0
+    },
+    "IA": {
+      "christian_pct": 65.0,
+      "evangelical_pct": 21.0,
+      "catholic_pct": 15.0,
+      "unaffiliated_pct": 31.0
+    },
+    "ID": {
+      "christian_pct": 63.0,
+      "evangelical_pct": 31.0,
+      "catholic_pct": 9.0,
+      "unaffiliated_pct": 34.0
+    },
+    "IL": {
+      "christian_pct": 62.5,
+      "evangelical_pct": 16.0,
+      "catholic_pct": 23.0,
+      "unaffiliated_pct": 29.0
+    },
+    "IN": {
+      "christian_pct": 65.0,
+      "evangelical_pct": 32.0,
+      "catholic_pct": 16.0,
+      "unaffiliated_pct": 30.0
+    },
+    "KS": {
+      "christian_pct": 71.5,
+      "evangelical_pct": 27.0,
+      "catholic_pct": 19.0,
+      "unaffiliated_pct": 28.0
+    },
+    "KY": {
+      "christian_pct": 72.5,
+      "evangelical_pct": 46.0,
+      "catholic_pct": 11.0,
+      "unaffiliated_pct": 24.0
+    },
+    "LA": {
+      "christian_pct": 76.0,
+      "evangelical_pct": 33.0,
+      "catholic_pct": 23.0,
+      "unaffiliated_pct": 22.0
+    },
+    "MA": {
+      "christian_pct": 53.5,
+      "evangelical_pct": 8.0,
+      "catholic_pct": 29.0,
+      "unaffiliated_pct": 38.0
+    },
+    "MD": {
+      "christian_pct": 59.0,
+      "evangelical_pct": 15.0,
+      "catholic_pct": 12.0,
+      "unaffiliated_pct": 32.0
+    },
+    "ME": {
+      "christian_pct": 53.0,
+      "evangelical_pct": 22.0,
+      "catholic_pct": 14.0,
+      "unaffiliated_pct": 39.0
+    },
+    "MI": {
+      "christian_pct": 62.0,
+      "evangelical_pct": 21.0,
+      "catholic_pct": 19.0,
+      "unaffiliated_pct": 31.0
+    },
+    "MN": {
+      "christian_pct": 63.5,
+      "evangelical_pct": 20.0,
+      "catholic_pct": 18.0,
+      "unaffiliated_pct": 29.0
+    },
+    "MO": {
+      "christian_pct": 63.0,
+      "evangelical_pct": 31.0,
+      "catholic_pct": 14.0,
+      "unaffiliated_pct": 33.0
+    },
+    "MS": {
+      "christian_pct": 78.5,
+      "evangelical_pct": 42.0,
+      "catholic_pct": 5.0,
+      "unaffiliated_pct": 19.0
+    },
+    "MT": {
+      "christian_pct": 56.0,
+      "evangelical_pct": 28.0,
+      "catholic_pct": 12.0,
+      "unaffiliated_pct": 39.0
+    },
+    "NC": {
+      "christian_pct": 69.5,
+      "evangelical_pct": 35.0,
+      "catholic_pct": 7.0,
+      "unaffiliated_pct": 26.0
+    },
+    "ND": {
+      "christian_pct": 74.5,
+      "evangelical_pct": 21.0,
+      "catholic_pct": 23.0,
+      "unaffiliated_pct": 23.0
+    },
+    "NE": {
+      "christian_pct": 76.0,
+      "evangelical_pct": 31.0,
+      "catholic_pct": 20.0,
+      "unaffiliated_pct": 22.0
+    },
+    "NH": {
+      "christian_pct": 47.0,
+      "evangelical_pct": 10.0,
+      "catholic_pct": 20.0,
+      "unaffiliated_pct": 48.0
+    },
+    "NJ": {
+      "christian_pct": 59.5,
+      "evangelical_pct": 9.0,
+      "catholic_pct": 33.0,
+      "unaffiliated_pct": 28.0
+    },
+    "NM": {
+      "christian_pct": 63.0,
+      "evangelical_pct": 25.0,
+      "catholic_pct": 27.0,
+      "unaffiliated_pct": 31.0
+    },
+    "NV": {
+      "christian_pct": 61.0,
+      "evangelical_pct": 18.0,
+      "catholic_pct": 21.0,
+      "unaffiliated_pct": 35.0
+    },
+    "NY": {
+      "christian_pct": 57.5,
+      "evangelical_pct": 10.0,
+      "catholic_pct": 29.0,
+      "unaffiliated_pct": 27.0
+    },
+    "OH": {
+      "christian_pct": 65.0,
+      "evangelical_pct": 26.0,
+      "catholic_pct": 16.0,
+      "unaffiliated_pct": 29.0
+    },
+    "OK": {
+      "christian_pct": 72.5,
+      "evangelical_pct": 47.0,
+      "catholic_pct": 8.0,
+      "unaffiliated_pct": 26.0
+    },
+    "OR": {
+      "christian_pct": 44.0,
+      "evangelical_pct": 25.0,
+      "catholic_pct": 8.0,
+      "unaffiliated_pct": 43.0
+    },
+    "PA": {
+      "christian_pct": 63.5,
+      "evangelical_pct": 19.0,
+      "catholic_pct": 22.0,
+      "unaffiliated_pct": 30.0
+    },
+    "RI": {
+      "christian_pct": 64.0,
+      "evangelical_pct": 12.0,
+      "catholic_pct": 39.0,
+      "unaffiliated_pct": 31.0
+    },
+    "SC": {
+      "christian_pct": 78.5,
+      "evangelical_pct": 39.0,
+      "catholic_pct": 7.0,
+      "unaffiliated_pct": 15.0
+    },
+    "SD": {
+      "christian_pct": 80.5,
+      "evangelical_pct": 34.0,
+      "catholic_pct": 16.0,
+      "unaffiliated_pct": 18.0
+    },
+    "TN": {
+      "christian_pct": 73.5,
+      "evangelical_pct": 45.0,
+      "catholic_pct": 7.0,
+      "unaffiliated_pct": 24.0
+    },
+    "TX": {
+      "christian_pct": 67.0,
+      "evangelical_pct": 27.0,
+      "catholic_pct": 22.0,
+      "unaffiliated_pct": 27.0
+    },
+    "UT": {
+      "christian_pct": 64.0,
+      "evangelical_pct": 3.0,
+      "catholic_pct": 4.0,
+      "unaffiliated_pct": 34.0
+    },
+    "VA": {
+      "christian_pct": 62.0,
+      "evangelical_pct": 25.0,
+      "catholic_pct": 10.0,
+      "unaffiliated_pct": 28.0
+    },
+    "VT": {
+      "christian_pct": 46.5,
+      "evangelical_pct": 8.0,
+      "catholic_pct": 18.0,
+      "unaffiliated_pct": 45.0
+    },
+    "WA": {
+      "christian_pct": 51.5,
+      "evangelical_pct": 23.0,
+      "catholic_pct": 14.0,
+      "unaffiliated_pct": 37.0
+    },
+    "WI": {
+      "christian_pct": 62.0,
+      "evangelical_pct": 19.0,
+      "catholic_pct": 20.0,
+      "unaffiliated_pct": 34.0
+    },
+    "WV": {
+      "christian_pct": 65.5,
+      "evangelical_pct": 37.0,
+      "catholic_pct": 3.0,
+      "unaffiliated_pct": 32.0
+    },
+    "WY": {
+      "christian_pct": 62.5,
+      "evangelical_pct": 23.0,
+      "catholic_pct": 12.0,
+      "unaffiliated_pct": 34.0
+    }
+  }
+}
