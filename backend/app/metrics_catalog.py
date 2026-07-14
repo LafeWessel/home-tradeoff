@@ -787,6 +787,24 @@ CATALOG: list[MetricDef] = [
         finest_level="state",
     ),
     MetricDef(
+        key="outdoor.nps_units_count",
+        label="National Park Service units",
+        category="outdoor",
+        unit="units",
+        direction=MetricDirection.higher_better,
+        description=(
+            "Count of National Park Service-managed units in the state (national parks, "
+            "monuments, historic sites, seashores, parkways, recreation areas, etc.), not "
+            "limited to units carrying the literal 'National Park' designation. A proxy for "
+            "density of federally-managed outdoor recreation access — distinct from "
+            "env.public_land_pct, which measures overall public land ownership share "
+            "regardless of recreational development. Figures are FY2020 vintage per NPS's "
+            "own state summary pages; see source notes."
+        ),
+        source_label="National Park Service (nps.gov/state, FY2020 vintage)",
+        finest_level="state",
+    ),
+    MetricDef(
         key="outdoor.foraging_rating",
         label="Foraging availability",
         category="outdoor",

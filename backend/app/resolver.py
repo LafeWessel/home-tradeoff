@@ -151,6 +151,7 @@ def ensure_metric_values(
     _upsert(db, static_loader.fetch_water_quality(db, working))
     _upsert(db, static_loader.fetch_firearms(db, working))
     _upsert(db, static_loader.fetch_outdoor_recreation(db, working))
+    _upsert(db, static_loader.fetch_recreation(db, working))
     _upsert(db, static_loader.fetch_marijuana(db, working))
     _upsert(db, static_loader.fetch_abortion(db, working))
     _upsert(db, static_loader.fetch_religion(db, working))

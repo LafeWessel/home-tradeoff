@@ -29,6 +29,7 @@ big or too irregular to hit a live API for every comparison.
 | `state_water_quality.json` | America's Health Rankings (EPA SDWIS/ECHO) | Annual | Health-based drinking water violations per community water system |
 | `state_marijuana.json` | NCSL / DISA Global Solutions | As changed | Marijuana legal status (illegal / medical / recreational); see file `_meta.notes` for recently-changed states |
 | `state_abortion.json` | Guttmacher Institute / KFF | As changed | Abortion legal status by gestational limit; see file `_meta.notes` for contested/litigated states |
+| `state_recreation.json` | National Park Service (nps.gov/state) | Infrequent | Count of NPS-managed units per state; figures are FY2020 vintage per NPS's own page footnote |
 
 **Optional county-level overlays** (drop in to enable finer resolution):
 

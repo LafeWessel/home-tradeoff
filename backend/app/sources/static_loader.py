@@ -606,6 +606,10 @@ def fetch_water_quality(_db: Session, locations: list[Location]):
     return _state_keyed_simple("state_water_quality.json", "env.water_quality_violations", locations)
 
 
+def fetch_recreation(_db: Session, locations: list[Location]):
+    return _state_keyed_simple("state_recreation.json", "outdoor.nps_units_count", locations)
+
+
 def fetch_marijuana(_db: Session, locations: list[Location]):
     return _state_keyed_simple("state_marijuana.json", "law.marijuana_status", locations)
 

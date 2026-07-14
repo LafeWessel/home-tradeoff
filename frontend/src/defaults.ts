@@ -126,6 +126,7 @@ const DEFAULTS: Record<string, DefaultSpec> = {
   "outdoor.hunting_rating": { ideal: 5, cap: 1 },
   "outdoor.fishing_rating": { ideal: 5, cap: 1 },
   "outdoor.foraging_rating": { ideal: 5, cap: 1 },
+  "outdoor.nps_units_count": { ideal: 15, cap: 1 },
 
   // Religion (Pew Research Religious Landscape Study). Defaults track US
   // national shares with wide tolerances — same rationale as race/ethnicity
