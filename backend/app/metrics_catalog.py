@@ -833,6 +833,26 @@ CATALOG: list[MetricDef] = [
         finest_level="state",
     ),
     MetricDef(
+        key="outdoor.park_availability_index",
+        label="Park system availability",
+        category="outdoor",
+        unit="0–100",
+        direction=MetricDirection.higher_better,
+        description=(
+            "Composite index blending federal and state park system size: "
+            "NPS unit count (outdoor.nps_units_count), state park unit count "
+            "(outdoor.state_park_count), and state park acreage (outdoor.state_park_acres), "
+            "each min-max normalized to 0-100 across states with data, then averaged with "
+            "equal weight. 100 in a component means that state has the highest value among "
+            "states with data for that component, not necessarily the same state across all "
+            "three. Normalizing avoids a state with many small state-park units (e.g. "
+            "Minnesota's 1,676 units) drowning out a state with vast acreage but fewer units "
+            "(e.g. Alaska's 3.3M acres). DC excluded — no state park system to blend in."
+        ),
+        source_label="Derived — NPS + NASPD (curated)",
+        finest_level="state",
+    ),
+    MetricDef(
         key="outdoor.foraging_rating",
         label="Foraging availability",
         category="outdoor",

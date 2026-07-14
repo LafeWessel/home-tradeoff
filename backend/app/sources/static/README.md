@@ -41,6 +41,13 @@ big or too irregular to hit a live API for every comparison.
 
 If these files are absent the app falls back to state-level values automatically.
 
+**Derived metrics** (no static file of their own — computed at load time from other
+files listed above, so they can't drift out of sync with their inputs):
+
+| Metric | Derived from | Method |
+|--------|-------------|--------|
+| `outdoor.park_availability_index` | `state_recreation.json` + `state_state_parks.json` | Min-max normalize each of NPS units, state park units, state park acres to 0-100 across states with data, then average with equal weight. See `static_loader.fetch_park_availability`. |
+
 **Provenance.** Every value loaded from these files is written to the metric
 cache with `source` + `source_year` so the UI can show a clear "as of" stamp.
 

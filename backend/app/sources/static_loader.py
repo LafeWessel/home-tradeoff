@@ -621,6 +621,47 @@ def fetch_state_parks(_db: Session, locations: list[Location]):
     )
 
 
+def _minmax_normalize(values: dict[str, float]) -> dict[str, float]:
+    """Scale a {key: value} map to 0-100 (min -> 0, max -> 100)."""
+    lo, hi = min(values.values()), max(values.values())
+    if hi <= lo:
+        return {k: 100.0 for k in values}
+    return {k: 100.0 * (v - lo) / (hi - lo) for k, v in values.items()}
+
+
+def fetch_park_availability(_db: Session, locations: list[Location]) -> list[tuple[int, str, float | None, str, int]]:
+    """Composite park-availability index, derived from the NPS and NASPD static datasets
+    (not its own curated file) so it can never drift out of sync with its inputs."""
+    nps_blob = _load("state_recreation.json")
+    park_blob = _load("state_state_parks.json")
+    nps_src, nps_yr = nps_blob["_meta"]["source"], int(nps_blob["_meta"]["source_year"])
+    park_src, park_yr = park_blob["_meta"]["source"], int(park_blob["_meta"]["source_year"])
+    nps_data = nps_blob["data"]
+    park_data = park_blob["data"]
+
+    common = set(nps_data) & set(park_data)
+    if not common:
+        return []
+
+    nps_norm = _minmax_normalize({s: float(nps_data[s]) for s in common})
+    units_norm = _minmax_normalize({s: float(park_data[s]["units"]) for s in common})
+    acres_norm = _minmax_normalize({s: float(park_data[s]["acres"]) for s in common})
+
+    src = f"{nps_src}; {park_src}"
+    yr = min(nps_yr, park_yr)
+
+    out: list[tuple[int, str, float | None, str, int]] = []
+    for loc in locations:
+        if loc.level != GeoLevel.state:
+            continue
+        abbr = loc.state_abbr
+        if not abbr or abbr not in common:
+            continue
+        composite = (nps_norm[abbr] + units_norm[abbr] + acres_norm[abbr]) / 3.0
+        out.append((loc.id, "outdoor.park_availability_index", composite, src, yr))
+    return out
+
+
 def fetch_marijuana(_db: Session, locations: list[Location]):
     return _state_keyed_simple("state_marijuana.json", "law.marijuana_status", locations)
 
