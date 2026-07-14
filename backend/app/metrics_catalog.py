@@ -681,6 +681,20 @@ CATALOG: list[MetricDef] = [
         source_label="Derived — NOAA NCEI Normals (county)",
         finest_level="county",
     ),
+    # ───── Environment — water quality (state-level curated) ─────
+    MetricDef(
+        key="env.water_quality_violations",
+        label="Drinking water violations",
+        category="environment",
+        unit="per system",
+        direction=MetricDirection.lower_better,
+        description="Average number of health-based Safe Drinking Water Act violations per "
+        "community water system. Lower is better. A per-system rate, not a population-weighted "
+        "share of residents affected — states with many small rural systems can score worse here "
+        "even when population impact is small. National average ~2.5.",
+        source_label="America's Health Rankings (EPA SDWIS/ECHO), 2024",
+        finest_level="state",
+    ),
     # ───── Law — firearm regulations (state-level curated) ─────
     MetricDef(
         key="law.firearm_permitless_carry",
@@ -705,6 +719,40 @@ CATALOG: list[MetricDef] = [
             "3 = permissive (permitless carry allowed, no assault weapon ban or magazine limits)."
         ),
         source_label="NRA-ILA / curated (2025)",
+        finest_level="state",
+    ),
+    MetricDef(
+        key="law.marijuana_status",
+        label="Marijuana legal status",
+        category="law",
+        unit="0–2",
+        direction=MetricDirection.target,
+        description=(
+            "State-level marijuana legal status: "
+            "0 = illegal (no comprehensive medical or adult-use program), "
+            "1 = medical use legal (comprehensive program for qualifying patients), "
+            "2 = recreational use legal for adults 21+. "
+            "State law changes frequently; see source notes for states that are recently "
+            "changed or not yet fully operational."
+        ),
+        source_label="NCSL / DISA Global Solutions (curated, 2026)",
+        finest_level="state",
+    ),
+    MetricDef(
+        key="law.abortion_status",
+        label="Abortion legal status",
+        category="law",
+        unit="0–2",
+        direction=MetricDirection.target,
+        description=(
+            "State-level abortion legal status, gestational-limit based: "
+            "0 = banned (total or near-total ban, roughly ≤6-week limit or no broad exceptions), "
+            "1 = restricted (gestational limit roughly 6-22 weeks), "
+            "2 = legal/protected (legal to fetal viability, roughly 24+ weeks, or no gestational limit). "
+            "Fast-moving area of law; see source notes for states that are contested, "
+            "mid-litigation, or facing ballot measures that could change their classification."
+        ),
+        source_label="Guttmacher Institute / KFF (curated, 2026)",
         finest_level="state",
     ),
     # ───── Outdoor recreation (state-level curated) ─────

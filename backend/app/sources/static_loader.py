@@ -602,6 +602,18 @@ def fetch_firearms(_db: Session, locations: list[Location]) -> list[tuple[int, s
     return out
 
 
+def fetch_water_quality(_db: Session, locations: list[Location]):
+    return _state_keyed_simple("state_water_quality.json", "env.water_quality_violations", locations)
+
+
+def fetch_marijuana(_db: Session, locations: list[Location]):
+    return _state_keyed_simple("state_marijuana.json", "law.marijuana_status", locations)
+
+
+def fetch_abortion(_db: Session, locations: list[Location]):
+    return _state_keyed_simple("state_abortion.json", "law.abortion_status", locations)
+
+
 def fetch_religion(_db: Session, locations: list[Location]):
     return _state_keyed_multi(
         "state_religion.json",

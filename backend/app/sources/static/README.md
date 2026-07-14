@@ -26,6 +26,9 @@ big or too irregular to hit a live API for every comparison.
 | `state_religion.json` | Pew Research Religious Landscape Study (2023-24) | ~10 yr | Christian / evangelical / Catholic / religiously unaffiliated adult share |
 | `county_religion_adherence.json` | 2020 U.S. Religion Census (ASARB) | ~10 yr | County-level congregational adherence rate (any faith); different methodology than `state_religion.json`, not directly comparable |
 | `county_religion_family.json` | 2020 U.S. Religion Census (ASARB), Group Detail file | ~10 yr | County-level Christian / evangelical / Catholic adherence rate; 372 denominations classified into RELTRAD-style families (see file's `_meta.notes`) |
+| `state_water_quality.json` | America's Health Rankings (EPA SDWIS/ECHO) | Annual | Health-based drinking water violations per community water system |
+| `state_marijuana.json` | NCSL / DISA Global Solutions | As changed | Marijuana legal status (illegal / medical / recreational); see file `_meta.notes` for recently-changed states |
+| `state_abortion.json` | Guttmacher Institute / KFF | As changed | Abortion legal status by gestational limit; see file `_meta.notes` for contested/litigated states |
 
 **Optional county-level overlays** (drop in to enable finer resolution):
 

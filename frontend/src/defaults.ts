@@ -109,9 +109,18 @@ const DEFAULTS: Record<string, DefaultSpec> = {
   "env.summit_count": { ideal: 10, tolerance: 30 },
   "env.plant_hardiness_zone": { ideal: 7, tolerance: 3 },
 
+  // Environment — water quality
+  "env.water_quality_violations": { ideal: 1, cap: 4.5 },
+
   // Law — firearms
   "law.firearm_permitless_carry": { ideal: 1, tolerance: 1.5 },
   "law.firearm_permissiveness": { ideal: 3, tolerance: 2 },
+
+  // Law — marijuana / abortion. Personal/political, so default to a neutral
+  // middle value with a wide tolerance (same rationale as religion/race
+  // above) rather than presuming a stance — dial in via preferences.
+  "law.marijuana_status": { ideal: 1, tolerance: 2 },
+  "law.abortion_status": { ideal: 1, tolerance: 2 },
 
   // Outdoor recreation
   "outdoor.hunting_rating": { ideal: 5, cap: 1 },
