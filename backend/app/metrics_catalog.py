@@ -787,67 +787,21 @@ CATALOG: list[MetricDef] = [
         finest_level="state",
     ),
     MetricDef(
-        key="outdoor.nps_units_count",
-        label="National Park Service units",
-        category="outdoor",
-        unit="units",
-        direction=MetricDirection.higher_better,
-        description=(
-            "Count of National Park Service-managed units in the state (national parks, "
-            "monuments, historic sites, seashores, parkways, recreation areas, etc.), not "
-            "limited to units carrying the literal 'National Park' designation. A proxy for "
-            "density of federally-managed outdoor recreation access — distinct from "
-            "env.public_land_pct, which measures overall public land ownership share "
-            "regardless of recreational development. Figures are FY2020 vintage per NPS's "
-            "own state summary pages; see source notes."
-        ),
-        source_label="National Park Service (nps.gov/state, FY2020 vintage)",
-        finest_level="state",
-    ),
-    MetricDef(
-        key="outdoor.state_park_count",
-        label="State park system units",
-        category="outdoor",
-        unit="units",
-        direction=MetricDirection.higher_better,
-        description=(
-            "Total number of units in the state park system (parks, recreation areas, "
-            "natural areas, historic areas, and similar categories the state park agency "
-            "manages). Excludes trail mileage, tracked separately. DC has no state park "
-            "system and is excluded."
-        ),
-        source_label="NASPD Annual Information Exchange (curated, FY2019-20)",
-        finest_level="state",
-    ),
-    MetricDef(
-        key="outdoor.state_park_acres",
-        label="State park system acreage",
-        category="outdoor",
-        unit="acres",
-        direction=MetricDirection.higher_better,
-        description=(
-            "Total acreage of the state park system, summed across all categories the "
-            "state park agency manages. DC has no state park system and is excluded."
-        ),
-        source_label="NASPD Annual Information Exchange (curated, FY2019-20)",
-        finest_level="state",
-    ),
-    MetricDef(
         key="outdoor.park_availability_index",
         label="Park system availability",
         category="outdoor",
         unit="0–100",
         direction=MetricDirection.higher_better,
         description=(
-            "Composite index blending federal and state park system size: "
-            "NPS unit count (outdoor.nps_units_count), state park unit count "
-            "(outdoor.state_park_count), and state park acreage (outdoor.state_park_acres), "
-            "each min-max normalized to 0-100 across states with data, then averaged with "
-            "equal weight. 100 in a component means that state has the highest value among "
-            "states with data for that component, not necessarily the same state across all "
-            "three. Normalizing avoids a state with many small state-park units (e.g. "
-            "Minnesota's 1,676 units) drowning out a state with vast acreage but fewer units "
-            "(e.g. Alaska's 3.3M acres). DC excluded — no state park system to blend in."
+            "Composite index blending federal and state park system scale across four "
+            "components: NPS unit count, NPS acreage, state park unit count, and state park "
+            "acreage. Each component is min-max normalized to 0-100 across states with data, "
+            "then averaged with equal weight. 100 in a component means that state has the "
+            "highest value among states with data for that component, not necessarily the "
+            "same state across all four. Normalizing avoids a state with many small "
+            "state-park units (e.g. Minnesota's 1,676 units) or one federal mega-park (e.g. "
+            "Alaska's 54.6M NPS acres) drowning out the others on a single raw scale. DC "
+            "excluded — no state park system to blend in."
         ),
         source_label="Derived — NPS + NASPD (curated)",
         finest_level="state",

@@ -29,8 +29,8 @@ big or too irregular to hit a live API for every comparison.
 | `state_water_quality.json` | America's Health Rankings (EPA SDWIS/ECHO) | Annual | Health-based drinking water violations per community water system |
 | `state_marijuana.json` | NCSL / DISA Global Solutions | As changed | Marijuana legal status (illegal / medical / recreational); see file `_meta.notes` for recently-changed states |
 | `state_abortion.json` | Guttmacher Institute / KFF | As changed | Abortion legal status by gestational limit; see file `_meta.notes` for contested/litigated states |
-| `state_recreation.json` | National Park Service (nps.gov/state) | Infrequent | Count of NPS-managed units per state; figures are FY2020 vintage per NPS's own page footnote |
-| `state_state_parks.json` | NASPD Annual Information Exchange | Infrequent | State park system unit count + acreage; FY2019-20 report (most recent freely public edition); DC excluded (no state park system) |
+| `state_recreation.json` | NPS state pages (unit counts, FY2020) + NPS Land Resources Division Acreage Report (acreage, 2026-06-30) | Infrequent | NPS-managed unit count + acreage per state; not exposed as a standalone metric — feeds `outdoor.park_availability_index` only, see below |
+| `state_state_parks.json` | NASPD Annual Information Exchange | Infrequent | State park system unit count + acreage; FY2019-20 report (most recent freely public edition); DC excluded (no state park system); not exposed as a standalone metric — feeds `outdoor.park_availability_index` only, see below |
 
 **Optional county-level overlays** (drop in to enable finer resolution):
 
@@ -46,7 +46,7 @@ files listed above, so they can't drift out of sync with their inputs):
 
 | Metric | Derived from | Method |
 |--------|-------------|--------|
-| `outdoor.park_availability_index` | `state_recreation.json` + `state_state_parks.json` | Min-max normalize each of NPS units, state park units, state park acres to 0-100 across states with data, then average with equal weight. See `static_loader.fetch_park_availability`. |
+| `outdoor.park_availability_index` | `state_recreation.json` + `state_state_parks.json` | Min-max normalize each of NPS units, NPS acres, state park units, state park acres to 0-100 across states with data, then average all four with equal weight. See `static_loader.fetch_park_availability`. |
 
 **Provenance.** Every value loaded from these files is written to the metric
 cache with `source` + `source_year` so the UI can show a clear "as of" stamp.

@@ -606,21 +606,6 @@ def fetch_water_quality(_db: Session, locations: list[Location]):
     return _state_keyed_simple("state_water_quality.json", "env.water_quality_violations", locations)
 
 
-def fetch_recreation(_db: Session, locations: list[Location]):
-    return _state_keyed_simple("state_recreation.json", "outdoor.nps_units_count", locations)
-
-
-def fetch_state_parks(_db: Session, locations: list[Location]):
-    return _state_keyed_multi(
-        "state_state_parks.json",
-        {
-            "units": "outdoor.state_park_count",
-            "acres": "outdoor.state_park_acres",
-        },
-        locations,
-    )
-
-
 def _minmax_normalize(values: dict[str, float]) -> dict[str, float]:
     """Scale a {key: value} map to 0-100 (min -> 0, max -> 100)."""
     lo, hi = min(values.values()), max(values.values())
@@ -631,7 +616,9 @@ def _minmax_normalize(values: dict[str, float]) -> dict[str, float]:
 
 def fetch_park_availability(_db: Session, locations: list[Location]) -> list[tuple[int, str, float | None, str, int]]:
     """Composite park-availability index, derived from the NPS and NASPD static datasets
-    (not its own curated file) so it can never drift out of sync with its inputs."""
+    (not its own curated file) so it can never drift out of sync with its inputs.
+    Blends four components: NPS unit count, NPS acreage, state park unit count, and
+    state park acreage — each min-max normalized 0-100, then averaged with equal weight."""
     nps_blob = _load("state_recreation.json")
     park_blob = _load("state_state_parks.json")
     nps_src, nps_yr = nps_blob["_meta"]["source"], int(nps_blob["_meta"]["source_year"])
@@ -643,9 +630,10 @@ def fetch_park_availability(_db: Session, locations: list[Location]) -> list[tup
     if not common:
         return []
 
-    nps_norm = _minmax_normalize({s: float(nps_data[s]) for s in common})
-    units_norm = _minmax_normalize({s: float(park_data[s]["units"]) for s in common})
-    acres_norm = _minmax_normalize({s: float(park_data[s]["acres"]) for s in common})
+    nps_units_norm = _minmax_normalize({s: float(nps_data[s]["units"]) for s in common})
+    nps_acres_norm = _minmax_normalize({s: float(nps_data[s]["acres"]) for s in common})
+    park_units_norm = _minmax_normalize({s: float(park_data[s]["units"]) for s in common})
+    park_acres_norm = _minmax_normalize({s: float(park_data[s]["acres"]) for s in common})
 
     src = f"{nps_src}; {park_src}"
     yr = min(nps_yr, park_yr)
@@ -657,7 +645,9 @@ def fetch_park_availability(_db: Session, locations: list[Location]) -> list[tup
         abbr = loc.state_abbr
         if not abbr or abbr not in common:
             continue
-        composite = (nps_norm[abbr] + units_norm[abbr] + acres_norm[abbr]) / 3.0
+        composite = (
+            nps_units_norm[abbr] + nps_acres_norm[abbr] + park_units_norm[abbr] + park_acres_norm[abbr]
+        ) / 4.0
         out.append((loc.id, "outdoor.park_availability_index", composite, src, yr))
     return out
 
