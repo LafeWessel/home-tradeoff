@@ -805,6 +805,34 @@ CATALOG: list[MetricDef] = [
         finest_level="state",
     ),
     MetricDef(
+        key="outdoor.state_park_count",
+        label="State park system units",
+        category="outdoor",
+        unit="units",
+        direction=MetricDirection.higher_better,
+        description=(
+            "Total number of units in the state park system (parks, recreation areas, "
+            "natural areas, historic areas, and similar categories the state park agency "
+            "manages). Excludes trail mileage, tracked separately. DC has no state park "
+            "system and is excluded."
+        ),
+        source_label="NASPD Annual Information Exchange (curated, FY2019-20)",
+        finest_level="state",
+    ),
+    MetricDef(
+        key="outdoor.state_park_acres",
+        label="State park system acreage",
+        category="outdoor",
+        unit="acres",
+        direction=MetricDirection.higher_better,
+        description=(
+            "Total acreage of the state park system, summed across all categories the "
+            "state park agency manages. DC has no state park system and is excluded."
+        ),
+        source_label="NASPD Annual Information Exchange (curated, FY2019-20)",
+        finest_level="state",
+    ),
+    MetricDef(
         key="outdoor.foraging_rating",
         label="Foraging availability",
         category="outdoor",

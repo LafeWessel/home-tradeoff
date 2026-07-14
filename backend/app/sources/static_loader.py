@@ -610,6 +610,17 @@ def fetch_recreation(_db: Session, locations: list[Location]):
     return _state_keyed_simple("state_recreation.json", "outdoor.nps_units_count", locations)
 
 
+def fetch_state_parks(_db: Session, locations: list[Location]):
+    return _state_keyed_multi(
+        "state_state_parks.json",
+        {
+            "units": "outdoor.state_park_count",
+            "acres": "outdoor.state_park_acres",
+        },
+        locations,
+    )
+
+
 def fetch_marijuana(_db: Session, locations: list[Location]):
     return _state_keyed_simple("state_marijuana.json", "law.marijuana_status", locations)
 
